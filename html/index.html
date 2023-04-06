@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<script>
+    // Telegram Timeline
+    // Written by Torivd and ChatGPT.
+    // I'm not a web developer by trade. Hopefully I didn't fuck up any security stuff.
+    // TODO: -
+</script>
+<!--
+teletime.net
+
+Let's turn telegram into twitter
+Want to escape twitter?
+Already use telegram?
+
+This web client takes all the telegram channels you follow and puts them into a single feed.
+
+You can comment, like and retweet (forward) just like on twitter!
+
+:)
+
+[login thingy]
+
+For the techy people,
+This is app written in pure JS using TDweb, and is hosted statically on github.io here: [link]
+
+I am not a web developer by trade, so this is all very new to me. Definitely tell me if I made some major security errors. I'm @torvid on telegram.
+-->
+
+<style>
+    body {
+        background-color: #0E1621;
+        color: #FFFFFF;
+        font-family: 'Atkinson Hyperlegible', sans-serif;
+        font-style: normal;
+
+    }
+
+    /* needed for the hidden attribute to actually work lol */
+    [hidden] {
+        display: none !important;
+    }
+
+    message {
+        background-color: #182533;
+        display: block;
+        margin: 1em;
+        border-radius: 1em;
+        max-width: 35em;
+        /* width: auto; */
+        width: fit-content;
+        padding: 0.5em;
+        /* bottom: -4em; */
+        height: 50%;
+    }
+
+    message-caption {
+        display: block;
+        padding: 0.5em;
+        white-space: break-spaces;
+        padding-right: 6em;
+    }
+
+    message-title {
+    }
+
+    message-timestamp {
+        text-align: right;
+        display: block;
+        padding: 0.5em;
+        font-size: small;
+        color: #71767B;
+    }
+
+    message-interactions {
+        display: unset;
+        /* padding: 1em; */
+        height: 2em;
+        margin: 2em;
+        position: relative;
+        top: 0em;
+        left: -4em;
+        white-space: nowrap;
+    }
+    message-images img{
+        border-radius: 1em;
+    }
+
+    button {
+        background-color: #182533;
+        border: none;
+        color: white;
+        width: 7em;
+        position: relative;
+        display: inline;
+    }
+    button span{
+        position: absolute;
+        top: 0.7em;
+        left: 6.5em;
+    }
+        /* after has background color that changes on hover */
+        /* before has the icon. */
+        button:hover::before {
+            background-color: #40678b;
+        }
+        button::before {
+            content: "";
+            background-size: 2.5em 2.5em;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 2.5em;
+            height: 2.5em;
+            position: absolute;
+            transition: background-color 0.1s;
+            border-radius: 2em;
+        }
+        button::after {
+            content: "";
+            background-image: url('icon-reply.png');
+            background-size: 1.5em 1.5em;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 2.5em;
+            /* background-color: red; */
+            height: 2.5em;
+            position: absolute;
+        }
+
+    .reply::after {
+        background-image: url('icon-reply.png');
+    }
+
+    .retweet::after {
+        background-image: url('icon-retweet.png');
+    }
+
+    .like::after {
+        background-image: url('icon-like.png');
+    }
+
+    .views::after {
+        background-image: url('icon-views.png');
+    }
+
+    .share::after {
+        background-image: url('icon-share.png');
+    }
+
+    message message-profile img {
+        width: 4em;
+        height: 4em;
+        border-radius: 4em;
+        padding: 0.5em;
+        /* padding-right: 0em; */
+    }
+
+    /*title*/
+    message message-profile span {
+        width: 5em;
+        height: 5em;
+        display: inline;
+        position: relative;
+        top: -3.5em;
+        left: -0.6em;
+        padding: 0.5em;
+        color: #72BAFA;
+        font-weight: Bold;
+    }
+    message message-profile {
+        display:block;
+    }
+    message message-content {
+        left: 5em;
+        top: -3em;
+        position: relative;
+        /* width: 10em; */
+        /* padding-right: 32em; */
+    }
+</style>
+
+<head>
+    <!-- amogus -->
+    <meta name="viewport" content="width=device-width, initial-scale=2.0">
+</head>
+
+<body>
+    <h1>Telegram Timeline</h1>
+
+<div style="white-space: break-spaces;">
+this is going to be crazy lol
+watch this space
+indev!
+</div>
+
+    <p id="state">state: </p>
+    <p id="auth_state">auth_state: </p>
+
+    <div id="phoneVerify">
+        <label for="phone">Enter phone number:</label>
+        <input type="tel" id="phoneNumber" name="phone">
+        <input type="button" id="phoneButton" value="ok">
+    </div>
+
+    <div id="codeVerify">
+        <label for="phone">Enter login code:</label>
+        <input type="tel" id="codeNumber" name="phone">
+        <input type="button" id="codeButton" value="ok">
+        make sure you use the regional indicator (+46xxxx...)
+    </div>
+
+    <div id="testControls">
+        <!--<input type="button" value="getChats()" , onclick="getChats()">
+        <input type="button" value="getMessages()" , onclick="getMessages()">-->
+        <input type="button" value="loadMore()" , onclick="loadMore()">
+        <p id="channelList">
+            <message>
+                <!--<message-retweeted-by>[person] "retweeted"</message-retweeted-by>-->
+                <message-profile>
+                    <img src="Coal.png" />
+                    <span>Username</span>
+                </message-profile>
+                <message-content>
+                    <!--<message-title></message-title>-->
+                    <message-caption>
+                        Lighting updates!
+
+                        Moved from simple single-color light probes to "spherical harmonics". I don't fully understand the math. I barely understand the math at all but the results kind of speak for themselves. x>
+                        This way of doing ambient light probes is the industry standard, used in both unreal and unity, so I'm still in good company.
+                    </message-caption>
+                    <message-images>
+                        <img src="Coal.png" />
+                    </message-images>
+                    <message-interactions>
+                        <button class="reply"><span>12</span></button>
+                        <button class="retweet"><span>37</span></button>
+                        <button class="like"><span>178</span></button>
+                        <button class="views"><span>3,831</span></button>
+                        <button class="share"><span></span></button>
+                    </message-interactions>
+                    <message-showthread>Show this thread</message-showthread>
+                </message-content>
+                <message-timestamp>test timestamp</message-timestamp>
+            </message>
+            <!--
+    <message>
+        <message-title>Torvid Content</message-title>
+        <message-caption>more tests</message-caption>
+        <message-timestamp>04/04/2023, 15:48:37</message-timestamp>
+    </message>
+        -->
+        </p>
+    </div>
+</body>
+
+<!-- Telegram library-->
+<script src="tdweb.js"></script>
+
+
+
+<script>
+
+    // Creates a message and appends it to the DOM
+    function createMessage(id, chatId, icon, username, text, date, image)
+    {
+        loadedMessages[id] = {};
+
+        var DOMmessage = DOMchannelList.appendChild(document.createElement("message"));
+        if (channels[chatId].latestDOMmessage)
+            channels[chatId].latestDOMmessage.hidden = false;
+        //DOMmessage.hidden = true;
+        channels[chatId].latestDOMmessage = DOMmessage;
+        loadedMessages[id].DOMmessage = DOMmessage;
+
+        loadedMessages[id].DOMprofile          = loadedMessages[id].DOMmessage.appendChild(document.createElement("message-profile"));
+        loadedMessages[id].DOMprofileImg       = loadedMessages[id].DOMprofile.appendChild(document.createElement("img"));
+        loadedMessages[id].DOMprofileUsername  = loadedMessages[id].DOMprofile.appendChild(document.createElement("span"));
+
+        loadedMessages[id].DOMcontent      = loadedMessages[id].DOMmessage.appendChild(document.createElement("message-content"));
+        loadedMessages[id].DOMcaption      = loadedMessages[id].DOMcontent.appendChild(document.createElement("message-caption"));
+        loadedMessages[id].DOMimages        = loadedMessages[id].DOMcontent.appendChild(document.createElement("message-images"));
+        loadedMessages[id].DOMinteractions = loadedMessages[id].DOMcontent.appendChild(document.createElement("message-interactions"));
+
+        var DOMreply = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        DOMreply.setAttribute("class", "reply");
+        DOMreply.appendChild(document.createElement("span")).textContent = "10"
+
+        var DOMretweet = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        DOMretweet.setAttribute("class", "retweet");
+        DOMretweet.appendChild(document.createElement("span")).textContent = "10"
+
+        var DOMlike = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        DOMlike.setAttribute("class", "like");
+        DOMlike.appendChild(document.createElement("span")).textContent = "10"
+
+        var DOMviews = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        DOMviews.setAttribute("class", "views");
+        DOMviews.appendChild(document.createElement("span")).textContent = "10"
+
+        var DOMshare = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        DOMshare.setAttribute("class", "share");
+        DOMshare.appendChild(document.createElement("span")).textContent = "10"
+
+        loadedMessages[id].DOMtimestamp = DOMmessage.appendChild(document.createElement("message-timestamp"));
+
+        loadedMessages[id].DOMprofileImg.src = channels[chatId].profilePicture;
+        if (image)
+        {
+            loadedMessages[id].DOMimages.appendChild(image);
+        }
+        loadedMessages[id].DOMprofileUsername.textContent = username
+        loadedMessages[id].DOMcaption.textContent = text
+        loadedMessages[id].DOMtimestamp.textContent = new Date(date * 1000).toLocaleString()
+    }
+
+    // get html elements
+    DOMlogState = document.getElementById("state");
+    DOMlogStateAuth = document.getElementById("auth_state");
+
+    DOMphoneVerify = document.getElementById("phoneVerify");
+    DOMphoneButton = document.getElementById("phoneButton");
+    DOMphoneNumber = document.getElementById("phoneNumber");
+    DOMphoneVerify.hidden = true;
+
+    DOMcodeVerify = document.getElementById("codeVerify");
+    DOMcodeButton = document.getElementById("codeButton");
+    DOMcodeNumber = document.getElementById("codeNumber");
+    DOMcodeVerify.hidden = true;
+
+    DOMtestControls = document.getElementById("testControls");
+    DOMtestButton = document.getElementById("testButton");
+    DOMchannelList = document.getElementById("channelList");
+    DOMtestControls.hidden = true;
+
+    channelIDs = []
+
+
+    // copied from stackoverflow, "wait for input"
+    // https://stackoverflow.com/questions/51374649/using-async-functions-to-await-user-input-from-onclick
+    function waitListener(element, listenerName)
+    {
+        return new Promise(function (resolve, reject)
+        {
+            var listener = event =>
+            {
+                element.removeEventListener(listenerName, listener);
+                resolve(event);
+            };
+            element.addEventListener(listenerName, listener);
+        });
+    }
+
+    loadedMessages = []
+    channels = {}
+    doneLoading = false;
+    //window.onscroll = function ()
+    //{
+    //    if ((window.innerHeight + Math.ceil(window.pageYOffset)) >= document.body.offsetHeight)
+    //    {
+    //        alert('At the bottom!')
+    //    }
+    //}
+    async function loadMore()
+    {
+        var smallest = undefined;
+        var smallestTimestamp = 0;
+        var smallestID = 0;
+        // find the channel with the most recent message and load that one
+        for (var i = 0; i < Object.keys(channels).length; i++)
+        {
+            var channel = channels[Object.keys(channels)[i]];
+            var timestamp = channel.latestMessageTimestamp
+            if (timestamp > smallestTimestamp)
+            {
+                smallestTimestamp = timestamp
+                smallest = channel;
+                smallestID = Object.keys(channels)[i];
+            }
+        }
+        loadChannel(smallestID, smallest.title)
+    }
+
+    async function loadFile(photo_id)
+    {
+        var result = await client.send({
+            '@type': 'downloadFile',
+            file_id: photo_id,
+            priority: 1,
+            synchronous: true, // download the file synchronously
+        });
+
+        var imagePath;
+        if (result.local.path)
+        {
+            const CHUNK_SIZE = 65536; // 64KB
+            let offset = 0;
+            const chunks = [];
+            const fileSize = result.size;
+            while (offset < fileSize)
+            {
+                const result2 = await client.send({
+                    '@type': 'readFilePart',
+                    file_id: result.id,
+                    offset: offset,
+                    count: Math.min(CHUNK_SIZE, fileSize - offset),
+                });
+
+                const fileData = result2.data;
+                chunks.push(fileData);
+                offset += CHUNK_SIZE;
+            }
+            const blob = new Blob(chunks);
+            const blobUrl = URL.createObjectURL(blob);
+            imagePath = blobUrl;
+        }
+        return imagePath;
+    }
+
+    async function loadChannel(chatId, chatTitle)
+    {
+        var startID = channels[chatId].latestMessage
+        var messageCount = 1;
+
+        var result = await client.send({
+            '@type': 'getChatHistory',
+            chat_id: chatId,
+            from_message_id: startID, // start from the latest message
+            offset: 0, // no offset needed
+            limit: messageCount, // number of messages to fetch
+        });
+
+        result = await client.send({
+            '@type': 'getChatHistory',
+            chat_id: chatId,
+            from_message_id: startID, // start from the latest message
+            offset: 0, // no offset needed
+            limit: messageCount, // number of messages to fetch
+        });
+
+        if (result['@type'] === 'messages')
+        {
+            for (const message of result.messages)
+            {
+                //console.log(message);
+                channels[chatId].latestMessage = message.id;
+                channels[chatId].loadedMessageCount++;
+                channels[chatId].latestMessageTimestamp = message.date;
+
+                var contentType = message.content["@type"];
+                if (contentType == "messageText")
+                {
+                    // TODO: grab embed data!
+                    // message text
+                    //var DOMmessage = appendMessage(chatTitle, message.content.text.text)
+
+                    //if (message.content?.web_page) {
+                    //    DOMmessage.textContent += "[embed]\n";
+                    //}
+                    createMessage(message.id, chatId, undefined, chatTitle, message.content.text.text, message.date)
+
+                    //var DOMmessage = DOMchannelList.appendChild(document.createElement("message"));
+                    //if (channels[chatId].latestDOMmessage)
+                    //    channels[chatId].latestDOMmessage.hidden = false;
+                    //DOMmessage.hidden = true;
+                    //channels[chatId].latestDOMmessage = DOMmessage;
+                    //
+                    //var DOMtitle = document.createElement("message-title");
+                    //var DOMcaption = document.createElement("message-caption");
+                    //var DOMtimestamp = document.createElement("message-timestamp");
+                    //DOMmessage.appendChild(DOMtitle);
+                    //DOMmessage.appendChild(DOMcaption);
+                    //DOMmessage.appendChild(DOMtimestamp);
+                    //
+                    //DOMtitle.textContent = chatTitle
+                    //DOMcaption.textContent = message.content.text.text
+                    //DOMtimestamp.textContent = new Date(message.date * 1000).toLocaleString()
+
+                }
+                else if (contentType == "messagePhoto")
+                {
+                    var photo = message.content.photo.sizes[0].photo;
+
+                    // TODO: How to do this correctly?
+                    // idk enough about js and this wasm filesystem thing
+
+                    //var result = await client.send({
+                    //    '@type': 'downloadFile',
+                    //    file_id: photo.id,
+                    //    priority: 1,
+                    //    synchronous: true, // download the file synchronously
+                    //});
+                    //
+                    //var imagePath;
+                    //if (result.local.path)
+                    //{
+                    //    const CHUNK_SIZE = 65536; // 64KB
+                    //    let offset = 0;
+                    //    const chunks = [];
+                    //    const fileSize = result.size;
+                    //    while (offset < fileSize)
+                    //    {
+                    //        const result2 = await client.send({
+                    //            '@type': 'readFilePart',
+                    //            file_id: result.id,
+                    //            offset: offset,
+                    //            count: Math.min(CHUNK_SIZE, fileSize - offset),
+                    //        });
+                    //
+                    //        const fileData = result2.data;
+                    //        chunks.push(fileData);
+                    //        offset += CHUNK_SIZE;
+                    //    }
+                    //    const blob = new Blob(chunks);
+                    //    const blobUrl = URL.createObjectURL(blob);
+                    //    imagePath = blobUrl;
+                    //}
+
+                    var imagePath = await loadFile(photo.id);
+
+                    var img;
+                    if (imagePath)
+                    {
+                        img = document.createElement('img');
+                        img.src = imagePath;
+                    }
+
+                    var id = message.media_album_id;
+                    if (message.media_album_id == 0)
+                        id = message.id;
+
+                    if (id in loadedMessages) // message already exsists
+                    {
+                        var newMessageRaw = loadedMessages[id];
+                        if (loadedMessages[id].DOMcaption.textContent == "")
+                        {
+                            loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
+                        }
+                        if (img)
+                        {
+                            loadedMessages[id].DOMimages.appendChild(img);
+                        }
+                    }
+                    else // new message
+                    {
+                        //loadedMessages[id] = {};
+
+                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message.date, img)
+
+                        //// add the message to the DOM
+                        //var DOMmessage = DOMchannelList.appendChild(document.createElement("message"));
+                        //if (channels[chatId].latestDOMmessage)
+                        //    channels[chatId].latestDOMmessage.hidden = false;
+                        //DOMmessage.hidden = true;
+                        //channels[chatId].latestDOMmessage = DOMmessage;
+                        //
+                        //loadedMessages[id].DOMtitle = document.createElement("message-title");
+                        //loadedMessages[id].DOMimages = document.createElement("message-images");
+                        //loadedMessages[id].DOMcaption = document.createElement("message-caption");
+                        //loadedMessages[id].DOMtimestamp = document.createElement("message-timestamp");
+                        //DOMmessage.appendChild(loadedMessages[id].DOMtitle);
+                        //DOMmessage.appendChild(loadedMessages[id].DOMimages);
+                        //DOMmessage.appendChild(loadedMessages[id].DOMcaption);
+                        //DOMmessage.appendChild(loadedMessages[id].DOMtimestamp);
+                        //loadedMessages[id].DOMtimestamp.textContent = new Date(message.date * 1000).toLocaleString()
+                        //
+                        //loadedMessages[id].DOMtitle.textContent = chatTitle;
+                        //if (img)
+                        //{
+                        //    loadedMessages[id].DOMimages.appendChild(img);
+                        //}
+                        //// set stuff inside the message
+                        //loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
+                    }
+                }
+                else if (contentType == "messageVideo")
+                {
+                    appendMessage(chatId, chatTitle, "[video]\n" + message.content.caption.text)
+                }
+                else if (contentType == "messageAnimation")
+                {
+                    appendMessage(chatId, chatTitle, "[animation]\n" + message.content.caption.text)
+                }
+                else if (contentType == "messageDocument")
+                {
+                    appendMessage(chatId, chatTitle, "[document]\n" + message.content.caption.text)
+                }
+                else if (contentType == "messageChatChangeTitle")
+                {
+                }
+                else if (contentType == "messageSupergroupChatCreate")
+                {
+                }
+                else if (contentType == "messageChatChangePhoto")
+                {
+                }
+                else if (contentType == "messageSticker")
+                {
+                    // TODO: load stickers correctly
+                    appendMessage(chatId, chatTitle, "[sticker]\n" + message.content.sticker.emoji)
+                }
+                else
+                {
+                    appendMessage(chatId, chatTitle, "This message type (" + message.content["@type"] + ") is not yet suported, go harass @Torvid about it.");
+                }
+            }
+        }
+
+    }
+
+    async function getChats()
+    {
+        const result = await client.send({
+            '@type': 'getChats',
+            chat_list: {
+                '@type': 'chatListMain',
+            },
+            limit: 20,
+        });
+
+        return await client.send({
+            '@type': 'getChats',
+            chat_list: {
+                '@type': 'chatListMain',
+            },
+            limit: 20,
+        });
+    }
+
+    function appendMessage(chatId, title, text)
+    {
+        DOMmessage = document.createElement("message");
+        if (channels[chatId].latestDOMmessage)
+            channels[chatId].latestDOMmessage.hidden = false;
+        DOMmessage.hidden = true;
+        channels[chatId].latestDOMmessage = DOMmessage;
+        var DOMmessage = DOMchannelList.appendChild(DOMmessage)
+
+        DOMmessage.textContent += title + ":\n" + text + "\n\n";
+        return DOMmessage;
+    }
+
+    async function update(data)
+    {
+        // hoist
+        thing = data;
+        var type = data["@type"];
+        DOMlogState.textContent = "state: " + type;
+
+        if (type == "updateAuthorizationState")
+        {
+            var state = data.authorization_state["@type"];
+            DOMlogStateAuth.textContent = "auth_state: " + state;
+
+            if (state == "authorizationStateWaitTdlibParameters")
+            {
+                client.send({
+                    '@type': 'setTdlibParameters',
+                    parameters: {
+                        '@type': 'tdlibParameters',
+                        use_test_dc: false,
+                        database_directory: 'tdlib',
+                        files_directory: 'tdlib/files',
+                        use_file_database: false,
+                        use_chat_info_database: true,
+                        use_message_database: true,
+                        use_secret_chats: false,
+                        api_id: 26827015,
+                        api_hash: "66daa010ab01961d038809b996b791de",
+                        system_language_code: 'en-GB',
+                        device_model: 'Web',
+                        system_version: 'Unknown',
+                        application_version: '1.0',
+                        enable_storage_optimizer: true,
+                        ignore_file_names: false,
+                    },
+                });
+            }
+            else if (state == "authorizationStateWaitEncryptionKey")
+            {
+                client.send({
+                    '@type': 'checkDatabaseEncryptionKey',
+                    encryption_key: '', // no encryption
+                });
+
+                //client.send({'@type': 'checkDatabaseEncryptionKey', parameters:{client}});
+                //await checkDatabaseEncryptionKey(client);
+            }
+            else if (state == "authorizationStateWaitPhoneNumber")
+            {
+                DOMphoneVerify.hidden = false;
+
+                await waitListener(DOMphoneButton, "click");
+
+                await client.send({
+                    '@type': 'setAuthenticationPhoneNumber',
+                    phone_number: DOMphoneNumber.value,
+                    settings: {
+                        '@type': 'phoneNumberAuthenticationSettings',
+                        allow_flash_call: false,
+                        is_current_phone_number: false,
+                        allow_sms_retriever_api: false,
+                    },
+                });
+
+                DOMphoneVerify.hidden = true;
+            }
+            else if (state == "authorizationStateWaitEmailAddress")
+            {
+
+            }
+            else if (state == "authorizationStateWaitCode") // waiting for auth code
+            {
+                DOMcodeVerify.hidden = false;
+                await waitListener(DOMcodeButton, "click");
+
+                await client.send({
+                    '@type': 'checkAuthenticationCode',
+                    code: DOMcodeNumber.value,
+                });
+                DOMcodeVerify.hidden = true;
+            }
+            else if (state == "authorizationStateWaitRegistration")
+            {
+
+            }
+            else if (state == "authorizationStateWaitPassword")
+            {
+
+            }
+            else if (state == "authorizationStateReady")
+            {
+                DOMtestControls.hidden = false;
+                console.log("INITIAL LOAD START");
+                await getChats();
+                console.log("INITIAL LOAD END");
+            }
+        }
+        else if (type == "updateNewChat")
+        {
+            if (data.chat.type["@type"] == "chatTypeSupergroup" && data.chat.type.is_channel)
+            {
+                //if (data.chat.title != "Torvid Content")
+                //    return;
+                const supergroup = await client.send({
+                    '@type': 'getSupergroup',
+                    supergroup_id: data.chat.type.supergroup_id,
+                });
+
+                // If you are a member
+                if (supergroup.status["@type"] === 'chatMemberStatusMember' ||
+                    supergroup.status["@type"] === 'chatMemberStatusCreator' ||
+                    supergroup.status["@type"] === 'chatMemberStatusAdministrator' ||
+                    supergroup.status["@type"] === 'chatMemberStatusRestricted')
+                {
+                    
+                    channels[data.chat.id] = {};
+                    channels[data.chat.id].title = data.chat.title
+                    channels[data.chat.id].loadedMessageCount = 0;
+                    if (data.chat.photo)
+                    {
+                        var imagePath = await loadFile(data.chat.photo.small.id);
+                        channels[data.chat.id].profilePicture = imagePath;
+                    }
+                    else
+                    {
+                        channels[data.chat.id].profilePicture = "missing-picture.png";
+                    }
+
+                    // load one thing form every channel
+                    loadChannel(data.chat.id, data.chat.title);
+                }
+            }
+        }
+    }
+
+    let options =
+    {
+        logVerbosityLevel: 1,
+        jsLogVerbosityLevel: 3,
+        mode: 'wasm', // 'wasm-streaming'/'wasm'/'asmjs'
+        prefix: 'tdlib',
+        readOnly: false,
+        isBackground: false,
+        useDatabase: true,
+        wasmUrl: `3dee0f934ca1a5946a253599e3e442c6.wasm`,
+        onUpdate: update
+    };
+
+    // hoist
+    client = new tdweb.default(options)
+</script>
