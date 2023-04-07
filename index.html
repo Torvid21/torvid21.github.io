@@ -10,9 +10,14 @@
 <!--
 teletime.net
 
-    Now that twitter has no discoverability either, we could just move to telegram.
-    I made this telegram client that looks like twitter. Displaying channels you are following in a unified feed.
+    Now that twitter has no discoverability either, we could just move to telegram. :)
+    This is a telegram client that looks and (mostly) works like twitter. Displaying channels you are following in a unified feed.
     Tell me what you think, Poke @Torvid with thoughts and ideas. Especially if you are an experienced web developer <3.
+
+    The whole website is a single ~1kLOC html file containing all the html/css/script, so it should be easy for anyone to audit.
+    Only external library is TDweb, a wrapper for the telegram API found here:
+    https://www.npmjs.com/package/tdweb
+
 
 Let's turn telegram into twitter
 Want to escape twitter?
@@ -141,9 +146,11 @@ something something preocupied with whether they could
             width: 100%;
             display: block;
         }
+
         message-images img:nth-child(1) {
             grid-column: 1 / 3;
         }
+
         message-images video:nth-child(1) {
             grid-column: 1 / 3;
         }
@@ -210,7 +217,6 @@ something something preocupied with whether they could
     .share::after {
         background-image: url('icon-share.png');
     }
-
 </style>
 
 <!-- TODO: Add meta tags and embed for marketing! -->
@@ -236,19 +242,19 @@ something something preocupied with whether they could
         <label for="phone">Enter phone number:</label>
         <input type="tel" id="phoneNumber" name="phone">
         <input type="button" id="phoneButton" value="ok">
+        <br />
+        You need to use the regional indicator (+46xxxx...)
     </div>
 
     <div id="codeVerify">
         <label for="phone">Enter login code:</label>
         <input type="tel" id="codeNumber" name="phone">
         <input type="button" id="codeButton" value="ok">
-        make sure you use the regional indicator (+46xxxx...)
     </div>
-
     <div id="mainView">
         <span>write a message!</span>
         <br />
-        <input id="messageTextInput">
+        <input id="messageTextbox">
         <input type="button" id="messageSendButton" value="send">
         <!--<input type="button" value="getChats()" , onclick="getChats()">
         <input type="button" value="getMessages()" , onclick="getMessages()">-->
@@ -295,8 +301,6 @@ something something preocupied with whether they could
 
 <!-- Telegram library-->
 <script src="tdweb.js"></script>
-
-
 
 <script>
     // from here - https://www.npmjs.com/package/last-seen-ago?activeTab=readme
@@ -349,11 +353,11 @@ something something preocupied with whether they could
     }
 
     // Creates a message and appends it to the DOM
-    function createMessage(id, chatId, icon, username, text, message)
+    function createMessage(id, chatId, username, message)
     {
-        var replycount = 0;
-        if (message.interaction_info.reply_info)
-            replycount = message.interaction_info.reply_info.reply_count;
+        //var replycount = 0;
+        //if (message.interaction_info.reply_info)
+        //    replycount = message.interaction_info.reply_info.reply_count;
 
         var date = message.date;
         var forwardcount = message.interaction_info.forward_count;
@@ -377,22 +381,18 @@ something something preocupied with whether they could
         loadedMessages[id].DOMimages = loadedMessages[id].DOMcontent.appendChild(document.createElement("message-images"));
         loadedMessages[id].DOMinteractions = loadedMessages[id].DOMcontent.appendChild(document.createElement("message-interactions"));
 
-        var DOMreply = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
-        DOMreply.setAttribute("class", "reply");
-        DOMreply.appendChild(document.createElement("span")).textContent = replycount;//"10"
+        loadedMessages[id].DOMreply = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        loadedMessages[id].DOMreply.setAttribute("class", "reply");
+        loadedMessages[id].DOMreplyText = loadedMessages[id].DOMreply.appendChild(document.createElement("span"))
+        loadedMessages[id].DOMreplyText.textContent = 0;
 
-        var DOMretweet = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
-        DOMretweet.setAttribute("class", "retweet");
-        DOMretweet.appendChild(document.createElement("span")).textContent = forwardcount;//"10"
-
-        // TODO: add like support
-        //var DOMlike = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
-        //DOMlike.setAttribute("class", "like");
-        //DOMlike.appendChild(document.createElement("span")).textContent = "10"
+        loadedMessages[id].DOMretweet = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        loadedMessages[id].DOMretweet.setAttribute("class", "retweet");
+        loadedMessages[id].DOMretweet.appendChild(document.createElement("span")).textContent = forwardcount;
 
         var DOMviews = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         DOMviews.setAttribute("class", "views");
-        DOMviews.appendChild(document.createElement("span")).textContent = viewcount;//"10"
+        DOMviews.appendChild(document.createElement("span")).textContent = viewcount;
 
         var DOMshare = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         DOMshare.setAttribute("class", "share");
@@ -401,13 +401,8 @@ something something preocupied with whether they could
         loadedMessages[id].DOMtimestamp = DOMmessage.appendChild(document.createElement("message-timestamp"));
 
         loadedMessages[id].DOMprofileImg.src = channels[chatId].profilePicture;
-        //if (image)
-        //{
-        //    loadedMessages[id].DOMimages.appendChild(image);
-        //}
         loadedMessages[id].DOMprofileUsername.textContent = username
-        loadedMessages[id].DOMcaption.textContent = text
-        loadedMessages[id].DOMtimestamp.textContent = getNiceTime(new Date(date * 1000));//new Date(date * 1000).toLocaleString()
+        loadedMessages[id].DOMtimestamp.textContent = getNiceTime(new Date(date * 1000));
     }
 
     // get html elements
@@ -427,8 +422,9 @@ something something preocupied with whether they could
     DOMmainView = document.getElementById("mainView");
     DOMtestButton = document.getElementById("testButton");
     DOMchannelList = document.getElementById("channelList");
+    DOMmessageSendButton = document.getElementById("messageSendButton");
+    DOMmessageTextbox = document.getElementById("messageTextbox");
     DOMmainView.hidden = true;
-
     channelIDs = []
 
 
@@ -449,13 +445,6 @@ something something preocupied with whether they could
 
     loadedMessages = []
     channels = {}
-    //window.onscroll = function ()
-    //{
-    //    if ((window.innerHeight + Math.ceil(window.pageYOffset)) >= document.body.offsetHeight)
-    //    {
-    //        alert('At the bottom!')
-    //    }
-    //}
 
     var scrollChecker = setInterval(function ()
     {
@@ -497,10 +486,7 @@ something something preocupied with whether they could
     {
         return loadFile(file, "image/png", null);
     }
-    //async function loadVideo(file)
-    //{
-    //    return loadFile(file, "video/mp4", null);
-    //}
+
     async function loadFile(file, mime_type, setProgress)
     {
         var photo_id = file.id;
@@ -510,42 +496,31 @@ something something preocupied with whether they could
         const CHUNK_SIZE = 1024 * 64; // 64KB
 
         let offset = 0;
-        let fileSize = 0;
+        let fileSize = file.size;
 
         const chunks = [];
         while (true)
         {
-            var DLSize = CHUNK_SIZE
-            if (fileSize == 0)
-                DLSize = CHUNK_SIZE
-            else
-                DLSize = Math.min(CHUNK_SIZE, fileSize - offset)
+            var DLSize = Math.min(CHUNK_SIZE, fileSize - offset)
 
             if (DLSize <= 0)
                 break;
 
-            var result = await client.send({
-                '@type': 'downloadFile',
-                file_id: file.id,
-                priority: 1,
-                offset: offset,
-                limit: DLSize,
-                synchronous: true, // download the file synchronously
-            });
-
-            fileSize = result.size;
-
-            if (offset >= fileSize)
-                break;
-
-            //if (!result.local.path)
-            //    return "";
-
-            //console.log("photo_id: " + photo_id + ", " + result.id);
+            if (!file.is_downloading_completed)
+            {
+                var result = await client.send({
+                    '@type': 'downloadFile',
+                    file_id: file.id,
+                    priority: 1,
+                    offset: offset,
+                    limit: DLSize,
+                    synchronous: true, // download the file synchronously
+                });
+            }
 
             const result2 = await client.send({
                 '@type': 'readFilePart',
-                file_id: result.id,
+                file_id: file.id,
                 offset: offset,
                 count: Math.min(CHUNK_SIZE, fileSize - offset),
             });
@@ -567,7 +542,59 @@ something something preocupied with whether they could
 
         return imagePath;
     }
+    async function setReplyCount(id, message)
+    {
+        if (loadedMessages[id].DOMreplyText.textContent == 0 && message.interaction_info.reply_info)
+            loadedMessages[id].DOMreplyText.textContent = message.interaction_info.reply_info.reply_count;
+    }
+    async function addImage(id, message, image)
+    {
+        var images = loadedMessages[id].DOMimages;
 
+        var img = document.createElement('img');
+
+        images.insertBefore(img, images.firstChild);
+
+        loadImage(image).then((src) =>
+        {
+            img.src = src;
+        })
+        return img;
+    }
+    async function addVideo(id, message, video, thumbnail, controls)
+    {
+        var thumbnailPath = await loadImage(thumbnail);
+        var DOMvideo = document.createElement('video');
+        var images = loadedMessages[id].DOMimages;
+        images.insertBefore(DOMvideo, images.firstChild);
+
+        if (controls)
+            DOMvideo.setAttribute("controls", "");
+        else
+            DOMvideo.setAttribute("autoplay", "");
+
+        DOMvideo.setAttribute("poster", thumbnailPath);
+
+        var progress = images.appendChild(document.createElement('progress'));
+        var videoUrl = await loadFile(video, "video/mp4", function (value, max)
+        {
+            if (value == max) // done
+            {
+                progress.hidden = true;
+            }
+            progress.setAttribute("value", value)
+            progress.setAttribute("max", max)
+        });
+
+        var source = document.createElement('source');
+        source.setAttribute("src", videoUrl);
+        DOMvideo.appendChild(source);
+    }
+    async function setCaption(id, message, caption)
+    {
+        if (loadedMessages[id].DOMcaption.textContent == "")
+            loadedMessages[id].DOMcaption.textContent = caption;
+    }
     async function loadMessageFromChannel(chatId, chatTitle)
     {
         var startID = channels[chatId].latestMessage
@@ -604,93 +631,50 @@ something something preocupied with whether they could
                 var contentType = message.content["@type"];
                 if (contentType == "messageText")
                 {
-                    createMessage(message.id, chatId, undefined, chatTitle, message.content.text.text, message);
+                    createMessage(message.id, chatId, chatTitle, message);
+                    setReplyCount(id, message);
+                    setCaption(id, message, message.content.text.text);
                 }
                 else if (contentType == "messagePhoto")
                 {
-                    if (!(id in loadedMessages)) // new message
-                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
-
                     // TODO: Lightbox
 
-                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
-                    img.src = await loadImage(message.content.photo.sizes[0].photo);
+                    if (!(id in loadedMessages)) // new message
+                        createMessage(id, chatId, chatTitle, message)
+                    setReplyCount(id, message);
+                    setCaption(id, message, message.content.caption.text);
 
-                    if (loadedMessages[id].DOMcaption.textContent == "")
-                        loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
+                    addImage(id, message, message.content.photo.sizes[0].photo);
                 }
                 else if (contentType == "messageVideo")
                 {
+                    console.log(message)
                     if (!(id in loadedMessages)) // new message
-                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
+                        createMessage(id, chatId, chatTitle, message)
+                    setReplyCount(id, message);
+                    setCaption(id, message, message.content.caption.text);
 
-                    var thumbnailPath = await loadImage(message.content.video.thumbnail.file);
-
-
-                    var video = loadedMessages[id].DOMimages.appendChild(document.createElement('video'));
-                    video.setAttribute("controls", "");
-                    video.setAttribute("poster", thumbnailPath);
-
-                    var progress = loadedMessages[id].DOMimages.appendChild(document.createElement('progress'));
-
-                    var videoUrl = await loadFile(message.content.video.video, "video/mp4", function (value, max)
-                    {
-                        if (value == max) // done
-                        {
-                            progress.hidden = true;
-                        }
-                        progress.setAttribute("value", value)
-                        progress.setAttribute("max", max)
-                    });
-
-                    var source = document.createElement('source');
-                    source.setAttribute("src", videoUrl);
-                    video.appendChild(source);
-
+                    addVideo(id, message, message.content.video.video, message.content.video.thumbnail.file, true)
+                    
                 }
                 else if (contentType == "messageAnimation")
                 {
-                    console.log(message)
                     if (!(id in loadedMessages)) // new message
-                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
+                        createMessage(id, chatId, chatTitle, message)
 
-                    var thumbnailPath = await loadImage(message.content.animation.thumbnail.file);
+                    setReplyCount(id, message);
+                    setCaption(id, message, message.content.caption.text);
 
-                    var video = loadedMessages[id].DOMimages.appendChild(document.createElement('video'));
-                    video.setAttribute("autoplay", "");
-                    video.setAttribute("poster", thumbnailPath);
-
-                    var progress = loadedMessages[id].DOMimages.appendChild(document.createElement('progress'));
-
-                    var videoUrl = await loadFile(message.content.animation.animation, "video/mp4", function (value, max)
-                    {
-                        if (value == max) // done
-                        {
-                            progress.hidden = true;
-                        }
-                        progress.setAttribute("value", value)
-                        progress.setAttribute("max", max)
-                    });
-
-                    var source = document.createElement('source');
-                    source.setAttribute("src", videoUrl);
-                    video.appendChild(source);
-                    //appendMessage(chatId, chatTitle, "[animation]\n" + message.content.caption.text)
+                    addVideo(id, message, message.content.animation.animation, message.content.animation.thumbnail.file, false)
                 }
                 else if (contentType == "messageDocument")
                 {
                     if (!(id in loadedMessages)) // new message
-                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
+                        createMessage(id, chatId, chatTitle, message)
 
-                    // TODO: download button for the full document
-
-                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
-                    img.src = await loadImage(message.content.document.thumbnail.file);
-
-                    if (loadedMessages[id].DOMcaption.textContent == "")
-                        loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
-                    if (img)
-                        loadedMessages[id].DOMimages.appendChild(img);
+                    setReplyCount(id, message);
+                    setCaption(id, message, message.content.caption.text);
+                    addImage(id, message, message.content.document.thumbnail.file);
                 }
                 else if (contentType == "messageChatChangeTitle")
                 {
@@ -707,15 +691,20 @@ something something preocupied with whether they could
                 else if (contentType == "messageSticker")
                 {
                     if (!(id in loadedMessages)) // new message
-                        createMessage(id, chatId, undefined, chatTitle, "", message)
+                        createMessage(id, chatId, chatTitle, message)
 
-                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
-                    img.src = await loadImage(message.content.sticker.thumbnail.file);
+                    setReplyCount(id, message);
+                    setCaption(id, message, "");
+                    var img = await addImage(id, message, message.content.sticker.thumbnail.file);
+
+                    // force stickers to be 256x256
+                    img.setAttribute("style", "width:256px")
                 }
                 else
                 {
                     appendMessage(chatId, chatTitle, "This message type (" + message.content["@type"] + ") is not yet suported, go harass @Torvid about it.");
                 }
+
             }
         }
     }
@@ -779,8 +768,6 @@ something something preocupied with whether they could
                 doneLoading = true;
             }
         }
-
-
     }, 100);
 
     async function update(data)
@@ -927,7 +914,6 @@ something something preocupied with whether they could
         wasmUrl: `3dee0f934ca1a5946a253599e3e442c6.wasm`,
         onUpdate: update
     };
-
     // hoist
     client = new tdweb.default(options)
 </script>
