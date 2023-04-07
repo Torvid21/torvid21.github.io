@@ -4,10 +4,15 @@
     // Written by Torivd and ChatGPT.
     // I'm not a web developer by trade. Hopefully I didn't fuck up any security stuff. :)
 
+    // TODO: add tooltips to everything
 
 </script>
 <!--
 teletime.net
+
+    Now that twitter has no discoverability either, we could just move to telegram.
+    I made this telegram client that looks like twitter. Displaying channels you are following in a unified feed.
+    Tell me what you think, Poke @Torvid with thoughts and ideas. Especially if you are an experienced web developer <3.
 
 Let's turn telegram into twitter
 Want to escape twitter?
@@ -51,8 +56,8 @@ something something preocupied with whether they could
         display: block;
         margin: 1em;
         border-radius: 1em;
-        max-width: 35em;
-        width: fit-content;
+        /* width: 37em; */
+        width: 37em;
         padding: 0.5em;
         height: 50%;
     }
@@ -61,10 +66,38 @@ something something preocupied with whether they could
         display: block;
         padding: 0.5em;
         white-space: break-spaces;
-        padding-right: 6em;
     }
 
     message-title {
+    }
+
+
+    message message-profile img {
+        width: 4em;
+        height: 4em;
+        border-radius: 4em;
+    }
+
+    /*title*/
+    message message-profile span {
+        position: relative;
+        top: -3.0em;
+        left: 0.5em;
+        padding: 0.5em;
+        color: #72BAFA;
+        font-weight: Bold;
+    }
+
+    message-profile {
+        display: block;
+    }
+
+    message-content {
+        left: 4.5em;
+        top: -3em;
+        position: relative;
+        max-width: 30em;
+        display: block;
     }
 
     message-timestamp {
@@ -75,20 +108,45 @@ something something preocupied with whether they could
         color: #71767B;
     }
 
+
     message-interactions {
         display: unset;
-        /* padding: 1em; */
-        height: 2em;
+        height: 0em;
         margin: 2em;
         position: relative;
         top: 0em;
-        left: -4em;
+        left: -6em;
         white-space: nowrap;
+        display: inline;
     }
 
-    message-images img {
-        border-radius: 1em;
+    message-images {
+        padding-right: 6em;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
     }
+
+        message-images img {
+            margin: 0.1em;
+            border-radius: 1em;
+            width: 100%;
+        }
+
+        message-images video {
+            border-radius: 1em;
+            width: 100%;
+        }
+
+        message-images progress {
+            width: 100%;
+            display: block;
+        }
+        message-images img:nth-child(1) {
+            grid-column: 1 / 3;
+        }
+        message-images video:nth-child(1) {
+            grid-column: 1 / 3;
+        }
 
     button {
         background-color: #182533;
@@ -129,7 +187,6 @@ something something preocupied with whether they could
             background-repeat: no-repeat;
             background-position: center;
             width: 2.5em;
-            /* background-color: red; */
             height: 2.5em;
             position: absolute;
         }
@@ -154,38 +211,6 @@ something something preocupied with whether they could
         background-image: url('icon-share.png');
     }
 
-    message message-profile img {
-        width: 4em;
-        height: 4em;
-        border-radius: 4em;
-        padding: 0.5em;
-        /* padding-right: 0em; */
-    }
-
-    /*title*/
-    message message-profile span {
-        width: 5em;
-        height: 5em;
-        display: inline;
-        position: relative;
-        top: -3.5em;
-        left: -0.6em;
-        padding: 0.5em;
-        color: #72BAFA;
-        font-weight: Bold;
-    }
-
-    message message-profile {
-        display: block;
-    }
-
-    message message-content {
-        left: 5em;
-        top: -3em;
-        position: relative;
-        /* width: 10em; */
-        /* padding-right: 32em; */
-    }
 </style>
 
 <!-- TODO: Add meta tags and embed for marketing! -->
@@ -201,8 +226,11 @@ something something preocupied with whether they could
         indev!
     </div>
 
-    <p id="state">state: </p>
-    <p id="auth_state">auth_state: </p>
+    <div id="status" hidden>
+        <p id="state">state: </p>
+        <p id="auth_state">auth_state: </p>
+    </div>
+
 
     <div id="phoneVerify">
         <label for="phone">Enter phone number:</label>
@@ -217,12 +245,51 @@ something something preocupied with whether they could
         make sure you use the regional indicator (+46xxxx...)
     </div>
 
-    <div id="testControls">
+    <div id="mainView">
+        <span>write a message!</span>
+        <br />
+        <input id="messageTextInput">
+        <input type="button" id="messageSendButton" value="send">
         <!--<input type="button" value="getChats()" , onclick="getChats()">
-    <input type="button" value="getMessages()" , onclick="getMessages()">-->
+        <input type="button" value="getMessages()" , onclick="getMessages()">-->
         <p id="channelList">
+
+            <!--test message-->
+            <!--<message>
+            <message-retweeted-by>[person] "retweeted"</message-retweeted-by>
+            <message-profile>
+                <img src="Coal.png" />
+                <span>Username</span>
+            </message-profile>
+            <message-content>
+                <message-caption>
+                    Lighting updates!
+
+                    Moved from simple single-color light probes to "spherical harmonics". I don't fully understand the math. I barely understand the math at all but the results kind of speak for themselves. x>
+                    This way of doing ambient light probes is the industry standard, used in both unreal and unity, so I'm still in good company.
+                </message-caption>
+                <message-images>
+                    <video width="476" height="392" controls>
+                        <source src="tank.mp4" type="video/mp4">
+                    </video>
+                    <progress id="progress" max="100" value="0">
+                        Progress
+                    </progress>
+                </message-images>
+                <message-interactions>
+                    <button class="reply"><span>12</span></button>
+                    <button class="retweet"><span>37</span></button>
+                    <button class="like"><span>178</span></button>
+                    <button class="views"><span>3,831</span></button>
+                    <button class="share"><span></span></button>
+                </message-interactions>
+                <message-showthread>Show this thread</message-showthread>
+            </message-content>
+            <message-timestamp>test timestamp</message-timestamp>
+            </message>-->
         </p>
-        <input type="button" value="loadMore()" , onclick="loadMore()">
+        <!--<input type="button" value="loadMore()" , onclick="loadMore()">-->
+
     </div>
 </body>
 
@@ -238,12 +305,12 @@ something something preocupied with whether they could
         var currentTime = Math.floor(Date.now() / 1000) // timestamp in seconds
         var differenceTime = currentTime - Math.floor(date / 1000);
         var seconds = differenceTime;
-        var minutes = Math.floor(seconds / 60); // value 60 is seconds  
-        var hours = Math.floor(seconds / 3600); //value 3600 is 60 minutes * 60 sec  
-        var days = Math.floor(seconds / 86400); //86400 = 24 * 60 * 60;  
-        var weeks = Math.floor(seconds / 604800); // 7*24*60*60;  
-        var months = Math.floor(seconds / 2629440); //((365+365+365+365+366)/5/12)*24*60*60  
-        var years = Math.floor(seconds / 31553280); //(365+365+365+365+366)/5 * 24 * 60 * 60 
+        var minutes = Math.floor(seconds / 60); // value 60 is seconds
+        var hours = Math.floor(seconds / 3600); //value 3600 is 60 minutes * 60 sec
+        var days = Math.floor(seconds / 86400); //86400 = 24 * 60 * 60;
+        var weeks = Math.floor(seconds / 604800); // 7*24*60*60;
+        var months = Math.floor(seconds / 2629440); //((365+365+365+365+366)/5/12)*24*60*60
+        var years = Math.floor(seconds / 31553280); //(365+365+365+365+366)/5 * 24 * 60 * 60
 
         if (seconds <= 60)
         {
@@ -357,10 +424,10 @@ something something preocupied with whether they could
     DOMcodeNumber = document.getElementById("codeNumber");
     DOMcodeVerify.hidden = true;
 
-    DOMtestControls = document.getElementById("testControls");
+    DOMmainView = document.getElementById("mainView");
     DOMtestButton = document.getElementById("testButton");
     DOMchannelList = document.getElementById("channelList");
-    DOMtestControls.hidden = true;
+    DOMmainView.hidden = true;
 
     channelIDs = []
 
@@ -382,7 +449,6 @@ something something preocupied with whether they could
 
     loadedMessages = []
     channels = {}
-    doneLoading = false;
     //window.onscroll = function ()
     //{
     //    if ((window.innerHeight + Math.ceil(window.pageYOffset)) >= document.body.offsetHeight)
@@ -390,8 +456,21 @@ something something preocupied with whether they could
     //        alert('At the bottom!')
     //    }
     //}
+
+    var scrollChecker = setInterval(function ()
+    {
+        scroll = document.body.offsetHeight - (window.innerHeight + Math.ceil(window.pageYOffset));
+        if (scroll < 500)
+        {
+            loadMore();
+        }
+    }, 1000);
+
     async function loadMore()
     {
+        if (!doneLoading)
+            return;
+
         for (var j = 0; j < 10; j++)
         {
             var smallest = undefined;
@@ -413,164 +492,82 @@ something something preocupied with whether they could
             await loadMessageFromChannel(smallestID, smallest.title)
         }
     }
-    
-    async function loadImage(id)
-    {
-        return loadFile(id, "image/png");
-    }
-    async function loadVideo(id)
-    {
-        return loadFile(id, "video/mp4");
-    }
-    async function loadFile(photo_id, mime_type)
-    {
-        // TODO: How to do this "correctly"?
-        // idk enough about js and this wasm filesystem thing
 
-        var result = await client.send({
-            '@type': 'downloadFile',
-            file_id: photo_id,
-            priority: 1,
-            synchronous: true, // download the file synchronously
-        });
+    async function loadImage(file)
+    {
+        return loadFile(file, "image/png", null);
+    }
+    //async function loadVideo(file)
+    //{
+    //    return loadFile(file, "video/mp4", null);
+    //}
+    async function loadFile(file, mime_type, setProgress)
+    {
+        var photo_id = file.id;
+        // TODO: add support for streaming large video files.
 
         var imagePath;
-        if (result.local.path)
+        const CHUNK_SIZE = 1024 * 64; // 64KB
+
+        let offset = 0;
+        let fileSize = 0;
+
+        const chunks = [];
+        while (true)
         {
-            const CHUNK_SIZE = 1024 * 64; // 64KB
+            var DLSize = CHUNK_SIZE
+            if (fileSize == 0)
+                DLSize = CHUNK_SIZE
+            else
+                DLSize = Math.min(CHUNK_SIZE, fileSize - offset)
 
-            let offset = 0;
-            //let fileSize = 0;
+            if (DLSize <= 0)
+                break;
 
-            const chunks = [];
-            const fileSize = result.size;
-            while (offset < fileSize)
-            {
-                const result2 = await client.send({
-                    '@type': 'readFilePart',
-                    file_id: result.id,
-                    offset: offset,
-                    count: Math.min(CHUNK_SIZE, fileSize - offset),
-                });
+            var result = await client.send({
+                '@type': 'downloadFile',
+                file_id: file.id,
+                priority: 1,
+                offset: offset,
+                limit: DLSize,
+                synchronous: true, // download the file synchronously
+            });
 
-                const fileData = result2.data;
-                chunks.push(fileData);
-                //console.log("dl: " + Math.floor(offset / 1024) + "/" + Math.floor(fileSize / 1024));
-                offset += CHUNK_SIZE;
-            }
-            const blob = new Blob(chunks, { type: mime_type });
-            const blobUrl = URL.createObjectURL(blob);
-            imagePath = blobUrl;
+            fileSize = result.size;
+
+            if (offset >= fileSize)
+                break;
+
+            //if (!result.local.path)
+            //    return "";
+
+            //console.log("photo_id: " + photo_id + ", " + result.id);
+
+            const result2 = await client.send({
+                '@type': 'readFilePart',
+                file_id: result.id,
+                offset: offset,
+                count: Math.min(CHUNK_SIZE, fileSize - offset),
+            });
+
+            const fileData = result2.data;
+            chunks.push(fileData);
+
+            if (setProgress)
+                setProgress(offset, fileSize);
+
+            offset += CHUNK_SIZE;
         }
+        const blob = new Blob(chunks, { type: mime_type });
+        const blobUrl = URL.createObjectURL(blob);
+        imagePath = blobUrl;
+
+        if (setProgress)
+            setProgress(fileSize, fileSize);
+
         return imagePath;
     }
 
-    function blobToArrayBuffer(blob)
-    {
-        return new Promise((resolve, reject) =>
-        {
-            const reader = new FileReader();
-            reader.onload = () =>
-            {
-                resolve(reader.result);
-            };
-            reader.onerror = (error) =>
-            {
-                reject(error);
-            };
-            reader.readAsArrayBuffer(blob);
-        });
-    }
-
-    async function streamVideo(photo_id, mimeType, video_source_source_tag)
-    {
-        const mediaSource = new MediaSource();
-        //video.src = URL.createObjectURL(mediaSource);
-        video_source_source_tag.setAttribute("src", URL.createObjectURL(mediaSource));
-        mediaSource.addEventListener('sourceopen', async function ()
-        {
-            console.log(mediaSource.readyState);
-            const CHUNK_SIZE = (1024 * 128); // 1MB
-            //65536; // 64KB
-            let offset = 0;
-            let fileSize = 0;
-    
-            // what codecs are supported ?????
-            const sourceBuffer = mediaSource.addSourceBuffer('video/mp4; codecs="avc1.64000d,mp4a.40.2"');
-            sourceBuffer.mode = 'sequence';
-            //const sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
-
-            const fetchNextChunk = async () =>
-            {
-                var DLSize = CHUNK_SIZE
-                if (fileSize == 0)
-                    DLSize = CHUNK_SIZE
-                else
-                    DLSize = Math.min(CHUNK_SIZE, fileSize - offset)
-
-                if (DLSize < 0)
-                {
-                    console.log("Error or end of stream?");
-                    return false
-                }
-
-                // download a 64k chunk of the video file to the virtual filesystem
-                var result = await client.send({
-                    '@type': 'downloadFile',
-                    file_id: photo_id,
-                    priority: 1,
-                    offset: offset,
-                    limit: DLSize,
-                    synchronous: true, // download the chunk synchronously
-                });
-
-                fileSize = result.size
-    
-                if (!result.local.path)
-                {
-                    console.log("Error or end of stream?");
-                    return false
-                }
-
-                // read it from the file
-                const result2 = await client.send({
-                    '@type': 'readFilePart',
-                    file_id: result.id,
-                    offset: offset,
-                    count: DLSize,
-                });
-    
-                const fileData = await blobToArrayBuffer(result2.data);
-
-                //console.log("dl: " + Math.floor(offset / 1024) + "/" + Math.floor(fileSize / 1024));
-                offset += DLSize;
-
-                return fileData;
-            };
-    
-            // when the media player requests more data?
-            sourceBuffer.addEventListener('updateend', async () =>
-            {
-                if (!sourceBuffer.updating)
-                {
-                    const chunk = await fetchNextChunk();
-                    if (chunk)
-                    {
-                        sourceBuffer.appendBuffer(chunk);
-                    }
-                    else
-                    {
-                        console.log("END OF STREAM");
-                        mediaSource.endOfStream();
-                    }
-                }
-            });
-    
-            // Fetch and append the first chunk, needed for the metadata?
-            const firstChunk = await fetchNextChunk();
-            sourceBuffer.appendBuffer(firstChunk);
-        });
-    }
     async function loadMessageFromChannel(chatId, chatTitle)
     {
         var startID = channels[chatId].latestMessage
@@ -600,8 +597,6 @@ something something preocupied with whether they could
                 if (message.media_album_id == 0)
                     id = message.id;
 
-                //console.log(message);
-
                 channels[chatId].latestMessage = message.id;
                 channels[chatId].loadedMessageCount++;
                 channels[chatId].latestMessageTimestamp = message.date;
@@ -619,58 +614,68 @@ something something preocupied with whether they could
                     // TODO: Lightbox
 
                     var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
-                    img.src = await loadImage(message.content.photo.sizes[0].photo.id);
+                    img.src = await loadImage(message.content.photo.sizes[0].photo);
 
                     if (loadedMessages[id].DOMcaption.textContent == "")
                         loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
                 }
                 else if (contentType == "messageVideo")
                 {
-                    console.log(message);
-
                     if (!(id in loadedMessages)) // new message
                         createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
 
-                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
-                    img.src = await loadImage(message.content.video.thumbnail.file.id);
+                    var thumbnailPath = await loadImage(message.content.video.thumbnail.file);
 
 
-
-
-                    //const video = document.createElement('video');
-                    //video.controls = true;
-                    //
-                    //video.addEventListener('error', (event) =>
-                    //{
-                    //    console.error('Video error:', event.target.error);
-                    //});
-                    //loadedMessages[id].DOMimages.appendChild(video);
-
-                    //const videoUrl =
-                    //video.src = videoUrl;
-                    var video = document.createElement('video')
+                    var video = loadedMessages[id].DOMimages.appendChild(document.createElement('video'));
                     video.setAttribute("controls", "");
-                    loadedMessages[id].DOMimages.appendChild(video);
-                    
-                    video.addEventListener('error', function (event)
+                    video.setAttribute("poster", thumbnailPath);
+
+                    var progress = loadedMessages[id].DOMimages.appendChild(document.createElement('progress'));
+
+                    var videoUrl = await loadFile(message.content.video.video, "video/mp4", function (value, max)
                     {
-                        console.error('Video error:', event.target.error);
+                        if (value == max) // done
+                        {
+                            progress.hidden = true;
+                        }
+                        progress.setAttribute("value", value)
+                        progress.setAttribute("max", max)
                     });
-                    
+
                     var source = document.createElement('source');
-                    //source.setAttribute("type", "video/mp4");
-                    
-                    var videoUrl = await loadFile(message.content.video.video.id, "video/mp4");
                     source.setAttribute("src", videoUrl);
-                    //console.log(message.content.video.video.id);
-                    //await streamVideo(message.content.video.video.id, "video/mp4", source);
-                    
                     video.appendChild(source);
 
                 }
                 else if (contentType == "messageAnimation")
                 {
-                    appendMessage(chatId, chatTitle, "[animation]\n" + message.content.caption.text)
+                    console.log(message)
+                    if (!(id in loadedMessages)) // new message
+                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
+
+                    var thumbnailPath = await loadImage(message.content.animation.thumbnail.file);
+
+                    var video = loadedMessages[id].DOMimages.appendChild(document.createElement('video'));
+                    video.setAttribute("autoplay", "");
+                    video.setAttribute("poster", thumbnailPath);
+
+                    var progress = loadedMessages[id].DOMimages.appendChild(document.createElement('progress'));
+
+                    var videoUrl = await loadFile(message.content.animation.animation, "video/mp4", function (value, max)
+                    {
+                        if (value == max) // done
+                        {
+                            progress.hidden = true;
+                        }
+                        progress.setAttribute("value", value)
+                        progress.setAttribute("max", max)
+                    });
+
+                    var source = document.createElement('source');
+                    source.setAttribute("src", videoUrl);
+                    video.appendChild(source);
+                    //appendMessage(chatId, chatTitle, "[animation]\n" + message.content.caption.text)
                 }
                 else if (contentType == "messageDocument")
                 {
@@ -680,7 +685,7 @@ something something preocupied with whether they could
                     // TODO: download button for the full document
 
                     var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
-                    img.src = await loadImage(message.content.document.thumbnail.file.id);
+                    img.src = await loadImage(message.content.document.thumbnail.file);
 
                     if (loadedMessages[id].DOMcaption.textContent == "")
                         loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
@@ -705,7 +710,7 @@ something something preocupied with whether they could
                         createMessage(id, chatId, undefined, chatTitle, "", message)
 
                     var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
-                    img.src = await loadImage(message.content.sticker.thumbnail.file.id);
+                    img.src = await loadImage(message.content.sticker.thumbnail.file);
                 }
                 else
                 {
@@ -713,7 +718,6 @@ something something preocupied with whether they could
                 }
             }
         }
-
     }
 
     async function getChats()
@@ -748,10 +752,39 @@ something something preocupied with whether they could
         return DOMmessage;
     }
 
+    doneLoading = false;
+    var sameCount = 0;
+    var lastChannelCount;
+
+    // check 10 times per second (every 100ms)
+    var startupDelayChecker = setInterval(function ()
+    {
+        var channelCount = Object.keys(channels).length;
+        if (channelCount == 0)
+            return;
+
+        if (lastChannelCount != channelCount)
+        {
+            lastChannelCount = channelCount;
+            sameCount = 0;
+        }
+        else
+        {
+            sameCount++;
+            // If we've held onto the same number of channels for 300ms, that means all the channels have probably been loaded and we can go ahead and start loading messages.
+            if (sameCount >= 3)
+            {
+                console.log("DONE LOADING!");
+                clearInterval(startupDelayChecker);
+                doneLoading = true;
+            }
+        }
+
+
+    }, 100);
+
     async function update(data)
     {
-        // hoist
-        thing = data;
         var type = data["@type"];
         DOMlogState.textContent = "state: " + type;
 
@@ -838,7 +871,7 @@ something something preocupied with whether they could
             }
             else if (state == "authorizationStateReady")
             {
-                DOMtestControls.hidden = false;
+                DOMmainView.hidden = false;
 
                 getChats();
             }
@@ -867,7 +900,7 @@ something something preocupied with whether they could
                     channels[data.chat.id].loadedMessageCount = 0;
                     if (data.chat.photo)
                     {
-                        var imagePath = await loadImage(data.chat.photo.small.id);
+                        var imagePath = await loadImage(data.chat.photo.small);
                         channels[data.chat.id].profilePicture = imagePath;
                     }
                     else
