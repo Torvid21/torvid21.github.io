@@ -25,6 +25,10 @@ For the techy people,
 This is app written in pure JS using TDweb, and is hosted statically on github.io here: [link]
 
 I am not a web developer by trade, so this is all very new to me. Definitely tell me if I made some major security errors. I'm @torvid on telegram.
+
+
+something something preocupied with whether they could
+
 -->
 
 <style>
@@ -217,41 +221,6 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
         <!--<input type="button" value="getChats()" , onclick="getChats()">
     <input type="button" value="getMessages()" , onclick="getMessages()">-->
         <p id="channelList">
-            <message>
-                <!--<message-retweeted-by>[person] "retweeted"</message-retweeted-by>-->
-                <message-profile>
-                    <img src="Coal.png" />
-                    <span>Username</span>
-                </message-profile>
-                <message-content>
-                    <!--<message-title></message-title>-->
-                    <message-caption>
-                        Lighting updates!
-
-                        Moved from simple single-color light probes to "spherical harmonics". I don't fully understand the math. I barely understand the math at all but the results kind of speak for themselves. x>
-                        This way of doing ambient light probes is the industry standard, used in both unreal and unity, so I'm still in good company.
-                    </message-caption>
-                    <message-images>
-                        <img src="Coal.png" />
-                    </message-images>
-                    <message-interactions>
-                        <button class="reply"><span>12</span></button>
-                        <button class="retweet"><span>37</span></button>
-                        <button class="like"><span>178</span></button>
-                        <button class="views"><span>3,831</span></button>
-                        <button class="share"><span></span></button>
-                    </message-interactions>
-                    <message-showthread>Show this thread</message-showthread>
-                </message-content>
-                <message-timestamp>test timestamp</message-timestamp>
-            </message>
-            <!--
-        <message>
-            <message-title>Torvid Content</message-title>
-            <message-caption>more tests</message-caption>
-            <message-timestamp>04/04/2023, 15:48:37</message-timestamp>
-        </message>
-            -->
         </p>
         <input type="button" value="loadMore()" , onclick="loadMore()">
     </div>
@@ -263,7 +232,6 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
 
 
 <script>
-
     // from here - https://www.npmjs.com/package/last-seen-ago?activeTab=readme
     function getNiceTime(date)
     {
@@ -314,8 +282,16 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
     }
 
     // Creates a message and appends it to the DOM
-    function createMessage(id, chatId, icon, username, text, date, image, replycount, forwardcount, viewcount)
+    function createMessage(id, chatId, icon, username, text, message)
     {
+        var replycount = 0;
+        if (message.interaction_info.reply_info)
+            replycount = message.interaction_info.reply_info.reply_count;
+
+        var date = message.date;
+        var forwardcount = message.interaction_info.forward_count;
+        var viewcount = message.interaction_info.view_count;
+
         loadedMessages[id] = {};
 
         var DOMmessage = DOMchannelList.appendChild(document.createElement("message"));
@@ -358,10 +334,10 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
         loadedMessages[id].DOMtimestamp = DOMmessage.appendChild(document.createElement("message-timestamp"));
 
         loadedMessages[id].DOMprofileImg.src = channels[chatId].profilePicture;
-        if (image)
-        {
-            loadedMessages[id].DOMimages.appendChild(image);
-        }
+        //if (image)
+        //{
+        //    loadedMessages[id].DOMimages.appendChild(image);
+        //}
         loadedMessages[id].DOMprofileUsername.textContent = username
         loadedMessages[id].DOMcaption.textContent = text
         loadedMessages[id].DOMtimestamp.textContent = getNiceTime(new Date(date * 1000));//new Date(date * 1000).toLocaleString()
@@ -434,11 +410,19 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
                 }
             }
 
-            await loadChannel(smallestID, smallest.title)
+            await loadMessageFromChannel(smallestID, smallest.title)
         }
     }
-
-    async function loadFile(photo_id)
+    
+    async function loadImage(id)
+    {
+        return loadFile(id, "image/png");
+    }
+    async function loadVideo(id)
+    {
+        return loadFile(id, "video/mp4");
+    }
+    async function loadFile(photo_id, mime_type)
     {
         // TODO: How to do this "correctly"?
         // idk enough about js and this wasm filesystem thing
@@ -453,8 +437,11 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
         var imagePath;
         if (result.local.path)
         {
-            const CHUNK_SIZE = 65536; // 64KB
+            const CHUNK_SIZE = 1024 * 64; // 64KB
+
             let offset = 0;
+            //let fileSize = 0;
+
             const chunks = [];
             const fileSize = result.size;
             while (offset < fileSize)
@@ -468,16 +455,123 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
 
                 const fileData = result2.data;
                 chunks.push(fileData);
+                //console.log("dl: " + Math.floor(offset / 1024) + "/" + Math.floor(fileSize / 1024));
                 offset += CHUNK_SIZE;
             }
-            const blob = new Blob(chunks);
+            const blob = new Blob(chunks, { type: mime_type });
             const blobUrl = URL.createObjectURL(blob);
             imagePath = blobUrl;
         }
         return imagePath;
     }
 
-    async function loadChannel(chatId, chatTitle)
+    function blobToArrayBuffer(blob)
+    {
+        return new Promise((resolve, reject) =>
+        {
+            const reader = new FileReader();
+            reader.onload = () =>
+            {
+                resolve(reader.result);
+            };
+            reader.onerror = (error) =>
+            {
+                reject(error);
+            };
+            reader.readAsArrayBuffer(blob);
+        });
+    }
+
+    async function streamVideo(photo_id, mimeType, video_source_source_tag)
+    {
+        const mediaSource = new MediaSource();
+        //video.src = URL.createObjectURL(mediaSource);
+        video_source_source_tag.setAttribute("src", URL.createObjectURL(mediaSource));
+        mediaSource.addEventListener('sourceopen', async function ()
+        {
+            console.log(mediaSource.readyState);
+            const CHUNK_SIZE = (1024 * 128); // 1MB
+            //65536; // 64KB
+            let offset = 0;
+            let fileSize = 0;
+    
+            // what codecs are supported ?????
+            const sourceBuffer = mediaSource.addSourceBuffer('video/mp4; codecs="avc1.64000d,mp4a.40.2"');
+            sourceBuffer.mode = 'sequence';
+            //const sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
+
+            const fetchNextChunk = async () =>
+            {
+                var DLSize = CHUNK_SIZE
+                if (fileSize == 0)
+                    DLSize = CHUNK_SIZE
+                else
+                    DLSize = Math.min(CHUNK_SIZE, fileSize - offset)
+
+                if (DLSize < 0)
+                {
+                    console.log("Error or end of stream?");
+                    return false
+                }
+
+                // download a 64k chunk of the video file to the virtual filesystem
+                var result = await client.send({
+                    '@type': 'downloadFile',
+                    file_id: photo_id,
+                    priority: 1,
+                    offset: offset,
+                    limit: DLSize,
+                    synchronous: true, // download the chunk synchronously
+                });
+
+                fileSize = result.size
+    
+                if (!result.local.path)
+                {
+                    console.log("Error or end of stream?");
+                    return false
+                }
+
+                // read it from the file
+                const result2 = await client.send({
+                    '@type': 'readFilePart',
+                    file_id: result.id,
+                    offset: offset,
+                    count: DLSize,
+                });
+    
+                const fileData = await blobToArrayBuffer(result2.data);
+
+                //console.log("dl: " + Math.floor(offset / 1024) + "/" + Math.floor(fileSize / 1024));
+                offset += DLSize;
+
+                return fileData;
+            };
+    
+            // when the media player requests more data?
+            sourceBuffer.addEventListener('updateend', async () =>
+            {
+                if (!sourceBuffer.updating)
+                {
+                    const chunk = await fetchNextChunk();
+                    if (chunk)
+                    {
+                        sourceBuffer.appendBuffer(chunk);
+                    }
+                    else
+                    {
+                        console.log("END OF STREAM");
+                        mediaSource.endOfStream();
+                    }
+                }
+            });
+    
+            // Fetch and append the first chunk, needed for the metadata?
+            const firstChunk = await fetchNextChunk();
+            sourceBuffer.appendBuffer(firstChunk);
+        });
+    }
+    async function loadMessageFromChannel(chatId, chatTitle)
     {
         var startID = channels[chatId].latestMessage
         var messageCount = 1;
@@ -502,7 +596,12 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
         {
             for (const message of result.messages)
             {
-                console.log(message);
+                var id = message.media_album_id;
+                if (message.media_album_id == 0)
+                    id = message.id;
+
+                //console.log(message);
+
                 channels[chatId].latestMessage = message.id;
                 channels[chatId].loadedMessageCount++;
                 channels[chatId].latestMessageTimestamp = message.date;
@@ -510,39 +609,64 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
                 var contentType = message.content["@type"];
                 if (contentType == "messageText")
                 {
-                    createMessage(message.id, chatId, undefined, chatTitle, message.content.text.text, message.date, undefined, message.interaction_info.reply_info.reply_count, message.interaction_info.forward_count, message.interaction_info.view_count);
+                    createMessage(message.id, chatId, undefined, chatTitle, message.content.text.text, message);
                 }
                 else if (contentType == "messagePhoto")
                 {
-                    var imagePath = await loadFile(message.content.photo.sizes[0].photo.id);
+                    if (!(id in loadedMessages)) // new message
+                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
 
-                    var img;
-                    if (imagePath)
-                    {
-                        img = document.createElement('img');
-                        img.src = imagePath;
-                    }
+                    // TODO: Lightbox
 
-                    var id = message.media_album_id;
-                    if (message.media_album_id == 0)
-                        id = message.id;
+                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
+                    img.src = await loadImage(message.content.photo.sizes[0].photo.id);
 
-                    if (id in loadedMessages) // message already exsists
-                    {
-                        //var newMessageRaw = loadedMessages[id];
-                        if (loadedMessages[id].DOMcaption.textContent == "")
-                            loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
-                        if (img)
-                            loadedMessages[id].DOMimages.appendChild(img);
-                    }
-                    else // new message
-                    {
-                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message.date, img)
-                    }
+                    if (loadedMessages[id].DOMcaption.textContent == "")
+                        loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
                 }
                 else if (contentType == "messageVideo")
                 {
-                    appendMessage(chatId, chatTitle, "[video]\n" + message.content.caption.text)
+                    console.log(message);
+
+                    if (!(id in loadedMessages)) // new message
+                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
+
+                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
+                    img.src = await loadImage(message.content.video.thumbnail.file.id);
+
+
+
+
+                    //const video = document.createElement('video');
+                    //video.controls = true;
+                    //
+                    //video.addEventListener('error', (event) =>
+                    //{
+                    //    console.error('Video error:', event.target.error);
+                    //});
+                    //loadedMessages[id].DOMimages.appendChild(video);
+
+                    //const videoUrl =
+                    //video.src = videoUrl;
+                    var video = document.createElement('video')
+                    video.setAttribute("controls", "");
+                    loadedMessages[id].DOMimages.appendChild(video);
+                    
+                    video.addEventListener('error', function (event)
+                    {
+                        console.error('Video error:', event.target.error);
+                    });
+                    
+                    var source = document.createElement('source');
+                    //source.setAttribute("type", "video/mp4");
+                    
+                    var videoUrl = await loadFile(message.content.video.video.id, "video/mp4");
+                    source.setAttribute("src", videoUrl);
+                    //console.log(message.content.video.video.id);
+                    //await streamVideo(message.content.video.video.id, "video/mp4", source);
+                    
+                    video.appendChild(source);
+
                 }
                 else if (contentType == "messageAnimation")
                 {
@@ -550,45 +674,38 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
                 }
                 else if (contentType == "messageDocument")
                 {
-                    var imagePath = await loadFile(message.content.document.thumbnail.file.id);
+                    if (!(id in loadedMessages)) // new message
+                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message)
 
-                    var img;
-                    if (imagePath)
-                    {
-                        img = document.createElement('img');
-                        img.src = imagePath;
-                    }
+                    // TODO: download button for the full document
 
-                    var id = message.media_album_id;
-                    if (message.media_album_id == 0)
-                        id = message.id;
+                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
+                    img.src = await loadImage(message.content.document.thumbnail.file.id);
 
-                    if (id in loadedMessages) // message already exsists
-                    {
-                        if (loadedMessages[id].DOMcaption.textContent == "")
-                            loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
-                        if (img)
-                            loadedMessages[id].DOMimages.appendChild(img);
-                    }
-                    else
-                    {
-                        createMessage(id, chatId, undefined, chatTitle, message.content.caption.text, message.date, undefined)
-                    }
-                    //appendMessage(chatId, chatTitle, "[document]\n" + message.content.caption.text)
+                    if (loadedMessages[id].DOMcaption.textContent == "")
+                        loadedMessages[id].DOMcaption.textContent = message.content.caption.text;
+                    if (img)
+                        loadedMessages[id].DOMimages.appendChild(img);
                 }
                 else if (contentType == "messageChatChangeTitle")
                 {
+
                 }
                 else if (contentType == "messageSupergroupChatCreate")
                 {
+
                 }
                 else if (contentType == "messageChatChangePhoto")
                 {
+
                 }
                 else if (contentType == "messageSticker")
                 {
-                    // TODO: load stickers correctly
-                    appendMessage(chatId, chatTitle, "[sticker]\n" + message.content.sticker.emoji)
+                    if (!(id in loadedMessages)) // new message
+                        createMessage(id, chatId, undefined, chatTitle, "", message)
+
+                    var img = loadedMessages[id].DOMimages.appendChild(document.createElement('img'));
+                    img.src = await loadImage(message.content.sticker.thumbnail.file.id);
                 }
                 else
                 {
@@ -724,9 +841,9 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
                 DOMtestControls.hidden = false;
 
                 getChats();
-
             }
         }
+
         else if (type == "updateNewChat")
         {
             if (data.chat.type["@type"] == "chatTypeSupergroup" && data.chat.type.is_channel)
@@ -750,7 +867,7 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
                     channels[data.chat.id].loadedMessageCount = 0;
                     if (data.chat.photo)
                     {
-                        var imagePath = await loadFile(data.chat.photo.small.id);
+                        var imagePath = await loadImage(data.chat.photo.small.id);
                         channels[data.chat.id].profilePicture = imagePath;
                     }
                     else
@@ -759,7 +876,7 @@ I am not a web developer by trade, so this is all very new to me. Definitely tel
                     }
 
                     // load one thing form every channel
-                    loadChannel(data.chat.id, data.chat.title);
+                    loadMessageFromChannel(data.chat.id, data.chat.title);
                 }
             }
         }
