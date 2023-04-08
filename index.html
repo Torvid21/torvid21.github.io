@@ -537,10 +537,10 @@ something something preocupied with whether they could
             DOMchannelList.appendChild(DOMmessage);
         }
 
-        //if (channels[chatId].latestDOMmessage)
-        //    channels[chatId].latestDOMmessage.hidden = false;
-        //
-        //DOMmessage.hidden = true;
+        if (channels[chatId].latestDOMmessage)
+            channels[chatId].latestDOMmessage.hidden = false;
+
+        DOMmessage.hidden = true;
 
 
         channels[chatId].latestDOMmessage = DOMmessage;
@@ -586,7 +586,7 @@ something something preocupied with whether they could
         if (!doneLoading)
             return;
 
-        //for (var j = 0; j < 5; j++)
+        for (var j = 0; j < 5; j++)
         {
             var smallest = undefined;
             var smallestTimestamp = 0;
@@ -790,18 +790,6 @@ something something preocupied with whether they could
             await setCaption(id, message, message.content.caption.text);
             await addImage(id, message, message.content.document.thumbnail.file);
         }
-        else if (contentType == "messageChatChangeTitle")
-        {
-
-        }
-        else if (contentType == "messageSupergroupChatCreate")
-        {
-
-        }
-        else if (contentType == "messageChatChangePhoto")
-        {
-
-        }
         else if (contentType == "messageSticker")
         {
             if (!(id in loadedMessages)) // new message
@@ -813,10 +801,6 @@ something something preocupied with whether they could
 
             // force stickers to be 256x256
             img.setAttribute("style", "width:256px")
-        }
-        else
-        {
-            //appendMessage(chatId, chatTitle, "This message type (" + message.content["@type"] + ") is not yet suported, go harass @Torvid about it.");
         }
     }
 
@@ -855,7 +839,6 @@ something something preocupied with whether they could
             }
             for (const message of result.messages)
             {
-                console.log(message);
                 addMessage(chatId, message, chatTitle);
             }
         }
@@ -1087,29 +1070,9 @@ something something preocupied with whether they could
                     {
                         channels[data.chat.id].profilePicture = "missing-picture.png";
                     }
-
-                    // get timestmap of the latest message in the channel.
-                    var chatId = data.chat.id
-                    var result = await client.send({
-                        '@type': 'getChatHistory',
-                        chat_id: chatId,
-                        from_message_id: 0, // start from the latest message
-                        offset: 0, // no offset needed
-                        limit: 1, // number of messages to fetch
-                    });
-
-                    result = await client.send({
-                        '@type': 'getChatHistory',
-                        chat_id: chatId,
-                        from_message_id: 0, // start from the latest message
-                        offset: 0, // no offset needed
-                        limit: 1, // number of messages to fetch
-                    });
-
-                    for (const message of result.messages)
-                    {
-                        channels[chatId].latestMessageTimestamp = message.date;
-                    }
+                    console.log(data.chat);
+                    // load one thing form every channel
+                    loadMessageFromChannel(data.chat.id, data.chat.title);
                 }
                 if (supergroup.status["@type"] === 'chatMemberStatusCreator')
                 {
