@@ -4,20 +4,35 @@
     // Written by Torivd and ChatGPT.
     // I'm not a web developer by trade. Hopefully I didn't fuck up any security stuff. :)
 
-    // TODO: add tooltips to everything
+    // TODO:
+    // Add tooltips to everything
+    // Add suppor tfor Posting messages to a custom channel
+    // viewing a single channel
+        // Loading channel description, etc
+    // "share" button that works
+    // Add meta-tags with some nice marketing images
 
+    // Lightbox forimages
+    // Arbitrary file download?
+    // Download button for files
+
+    // TODO: add support for removing/inserting messages as they come in
+
+    // TODO: add DMs in the bottom right
 </script>
 <!--
 teletime.net
 
-    Now that twitter has no discoverability either, we could just move to telegram. :)
-    This is a telegram client that looks and (mostly) works like twitter. Displaying channels you are following in a unified feed.
+    Now that twitter has no discoverability anymore, we could just move to telegram. :)
+    This telegram client takes all the channels you follow and puts them into a single feed.
     Tell me what you think, Poke @Torvid with thoughts and ideas. Especially if you are an experienced web developer <3.
 
-    The whole website is a single ~1kLOC html file containing all the html/css/script, so it should be easy for anyone to audit.
+    The whole website is a single ~2kLOC html file containing all the html/css/script, so it should be easy for anyone to audit.
     Only external library is TDweb, a wrapper for the telegram API found here:
     https://www.npmjs.com/package/tdweb
 
+    LIVE version is here: https://teletime.net/
+    DEV version is here: http://212.100.102.124:8000/
 
 Let's turn telegram into twitter
 Want to escape twitter?
@@ -33,9 +48,6 @@ You can comment, like and retweet (forward) just like on twitter!
 
 For the techy people,
 This is app written in pure JS using TDweb, and is hosted statically on github.io here: [link]
-
-I am not a web developer by trade, so this is all very new to me. Definitely tell me if I made some major security errors. I'm @torvid on telegram.
-
 
 something something preocupied with whether they could
 
@@ -61,7 +73,6 @@ something something preocupied with whether they could
         display: block;
         margin: 1em;
         border-radius: 1em;
-        /* width: 37em; */
         width: 37em;
         padding: 0.5em;
         height: 50%;
@@ -83,7 +94,6 @@ something something preocupied with whether they could
         border-radius: 4em;
     }
 
-    /*title*/
     message message-profile span {
         position: relative;
         top: -3.0em;
@@ -112,7 +122,6 @@ something something preocupied with whether they could
         font-size: small;
         color: #71767B;
     }
-
 
     message-interactions {
         display: unset;
@@ -219,7 +228,6 @@ something something preocupied with whether they could
     }
 </style>
 
-<!-- TODO: Add meta tags and embed for marketing! -->
 <head>
 </head>
 
@@ -232,9 +240,10 @@ something something preocupied with whether they could
         indev!
     </div>
 
-    <div id="status" hidden>
+    <div id="status">
         <p id="state">state: </p>
         <p id="auth_state">auth_state: </p>
+        <p id="user_id">user_id: </p>
     </div>
 
 
@@ -251,11 +260,12 @@ something something preocupied with whether they could
         <input type="tel" id="codeNumber" name="phone">
         <input type="button" id="codeButton" value="ok">
     </div>
+
     <div id="mainView">
         <span>write a message!</span>
         <br />
         <input id="messageTextbox">
-        <input type="button" id="messageSendButton" value="send">
+        <input type="button" id="messageSendButton" value="send" onclick="sendMessage()">
         <!--<input type="button" value="getChats()" , onclick="getChats()">
         <input type="button" value="getMessages()" , onclick="getMessages()">-->
         <p id="channelList">
@@ -303,18 +313,20 @@ something something preocupied with whether they could
 <script src="tdweb.js"></script>
 
 <script>
+'use strict';
+
     // from here - https://www.npmjs.com/package/last-seen-ago?activeTab=readme
     function getNiceTime(date)
     {
         var currentTime = Math.floor(Date.now() / 1000) // timestamp in seconds
         var differenceTime = currentTime - Math.floor(date / 1000);
         var seconds = differenceTime;
-        var minutes = Math.floor(seconds / 60); // value 60 is seconds
-        var hours = Math.floor(seconds / 3600); //value 3600 is 60 minutes * 60 sec
-        var days = Math.floor(seconds / 86400); //86400 = 24 * 60 * 60;
-        var weeks = Math.floor(seconds / 604800); // 7*24*60*60;
-        var months = Math.floor(seconds / 2629440); //((365+365+365+365+366)/5/12)*24*60*60
-        var years = Math.floor(seconds / 31553280); //(365+365+365+365+366)/5 * 24 * 60 * 60
+        var minutes = Math.floor(seconds / 60);
+        var hours = Math.floor(seconds / 3600);
+        var days = Math.floor(seconds / 86400);
+        var weeks = Math.floor(seconds / 604800);
+        var months = Math.floor(seconds / 2629440);
+        var years = Math.floor(seconds / 31553280);
 
         if (seconds <= 60)
         {
@@ -352,13 +364,86 @@ something something preocupied with whether they could
         }
     }
 
+    // copied from stackoverflow, "wait for input"
+    // https://stackoverflow.com/questions/51374649/using-async-functions-to-await-user-input-from-onclick
+    function waitListener(element, listenerName)
+    {
+        return new Promise(function (resolve, reject)
+        {
+            var listener = event =>
+            {
+                element.removeEventListener(listenerName, listener);
+                resolve(event);
+            };
+            element.addEventListener(listenerName, listener);
+        });
+    }
+
+    async function sendMessage()
+    {
+        if (!timelineChannel)
+        {
+            // create the channel
+            const chat = await client.send({
+                "@type": "createNewSupergroupChat",
+                title: user.username + "'s Telegram Timeline",
+                is_channel: true,
+                description: "This channel is your Timeline. \nMessages posted or retweeted on from teletime.net will show up here. \n\nThis last number is your user ID and needs to remain at the end of the description for Teletime to work correctly:\n" + user.id,
+            });
+            var chatId = chat.id;
+
+            var public_username = user.username + "_Timeline4";
+
+            // make it public 
+            const isUsernameAvailable = await client.send({
+                "@type": "checkChatUsername",
+                chat_id: chatId,
+                username: public_username,
+            });
+
+            if (!isUsernameAvailable)
+            {
+                // TODO: handle this more gracefully. try again a bunch of times with alernate names?
+                console.log("failed to make the channel public. PANIC.");
+                return;
+            }
+
+            // don't wait for this
+            client.send({
+                "@type": "setSupergroupUsername",
+                supergroup_id: chat.type.supergroup_id,
+                username: public_username,
+            });
+
+            timelineChannel = chat;
+            // change the profile pic
+            // TODO: figure out how to set the profile picture.
+
+            //const uniqueRemoteImageUrl = `$http://212.100.102.124:8000/Coal.png?${Date.now()}`;
+            //console.log(uniqueRemoteImageUrl);
+            //var setphotoresult = await client.send({
+            //    "@type": "setChatPhoto",
+            //    chat_id: chatId,
+            //    photo: {
+            //        "@type": "inputFileGenerated",
+            //        original_path: uniqueRemoteImageUrl,
+            //        conversion: "",
+            //        expected_size: 0,
+            //    },
+            //});
+            //console.log(setphotoresult);
+
+            //console.log(result);
+        }
+        else
+        {
+            
+        }
+    }
+
     // Creates a message and appends it to the DOM
     function createMessage(id, chatId, username, message)
     {
-        //var replycount = 0;
-        //if (message.interaction_info.reply_info)
-        //    replycount = message.interaction_info.reply_info.reply_count;
-
         var date = message.date;
         var forwardcount = message.interaction_info.forward_count;
         var viewcount = message.interaction_info.view_count;
@@ -406,45 +491,33 @@ something something preocupied with whether they could
     }
 
     // get html elements
-    DOMlogState = document.getElementById("state");
-    DOMlogStateAuth = document.getElementById("auth_state");
+    var DOMlogState = document.getElementById("state");
+    var DOMlogStateAuth = document.getElementById("auth_state");
+    var DOMlogUserID = document.getElementById("user_id");
 
-    DOMphoneVerify = document.getElementById("phoneVerify");
-    DOMphoneButton = document.getElementById("phoneButton");
-    DOMphoneNumber = document.getElementById("phoneNumber");
+    var DOMphoneVerify = document.getElementById("phoneVerify");
+    var DOMphoneButton = document.getElementById("phoneButton");
+    var DOMphoneNumber = document.getElementById("phoneNumber");
     DOMphoneVerify.hidden = true;
 
-    DOMcodeVerify = document.getElementById("codeVerify");
-    DOMcodeButton = document.getElementById("codeButton");
-    DOMcodeNumber = document.getElementById("codeNumber");
+    var DOMcodeVerify = document.getElementById("codeVerify");
+    var DOMcodeButton = document.getElementById("codeButton");
+    var DOMcodeNumber = document.getElementById("codeNumber");
     DOMcodeVerify.hidden = true;
 
-    DOMmainView = document.getElementById("mainView");
-    DOMtestButton = document.getElementById("testButton");
-    DOMchannelList = document.getElementById("channelList");
-    DOMmessageSendButton = document.getElementById("messageSendButton");
-    DOMmessageTextbox = document.getElementById("messageTextbox");
+    var DOMmainView = document.getElementById("mainView");
+    var DOMtestButton = document.getElementById("testButton");
+    var DOMchannelList = document.getElementById("channelList");
+    var DOMmessageSendButton = document.getElementById("messageSendButton");
+    var DOMmessageTextbox = document.getElementById("messageTextbox");
     DOMmainView.hidden = true;
-    channelIDs = []
 
-
-    // copied from stackoverflow, "wait for input"
-    // https://stackoverflow.com/questions/51374649/using-async-functions-to-await-user-input-from-onclick
-    function waitListener(element, listenerName)
-    {
-        return new Promise(function (resolve, reject)
-        {
-            var listener = event =>
-            {
-                element.removeEventListener(listenerName, listener);
-                resolve(event);
-            };
-            element.addEventListener(listenerName, listener);
-        });
-    }
-
-    loadedMessages = []
-    channels = {}
+    var channelIDs = []
+    var loadedMessages = [] // groups messages into albums
+    var allMessages = [] // does not group messages into albums
+    var channels = {}
+    var user = undefined;
+    var timelineChannel = undefined
 
     var scrollChecker = setInterval(function ()
     {
@@ -469,6 +542,9 @@ something something preocupied with whether they could
             for (var i = 0; i < Object.keys(channels).length; i++)
             {
                 var channel = channels[Object.keys(channels)[i]];
+                if (channel.exhausted)
+                    continue;
+
                 var timestamp = channel.latestMessageTimestamp
                 if (timestamp > smallestTimestamp)
                 {
@@ -478,6 +554,7 @@ something something preocupied with whether they could
                 }
             }
 
+            //console.log(smallest);
             await loadMessageFromChannel(smallestID, smallest.title)
         }
     }
@@ -486,13 +563,10 @@ something something preocupied with whether they could
     {
         return loadFile(file, "image/png", null);
     }
-
-    async function loadFile(file, mime_type, setProgress)
+    async function loadFileBlob(file, mime_type, setProgress)
     {
-        var photo_id = file.id;
         // TODO: add support for streaming large video files.
 
-        var imagePath;
         const CHUNK_SIZE = 1024 * 64; // 64KB
 
         let offset = 0;
@@ -534,13 +608,15 @@ something something preocupied with whether they could
             offset += CHUNK_SIZE;
         }
         const blob = new Blob(chunks, { type: mime_type });
-        const blobUrl = URL.createObjectURL(blob);
-        imagePath = blobUrl;
-
         if (setProgress)
             setProgress(fileSize, fileSize);
 
-        return imagePath;
+        return blob;
+    }
+    async function loadFile(file, mime_type, setProgress)
+    {
+        const blob = await loadFileBlob(file, mime_type, setProgress)
+        return URL.createObjectURL(blob);
     }
     async function setReplyCount(id, message)
     {
@@ -569,9 +645,14 @@ something something preocupied with whether they could
         images.insertBefore(DOMvideo, images.firstChild);
 
         if (controls)
+        {
             DOMvideo.setAttribute("controls", "");
+        }
         else
+        {
             DOMvideo.setAttribute("autoplay", "");
+            DOMvideo.setAttribute("loop", "");
+        }
 
         DOMvideo.setAttribute("poster", thumbnailPath);
 
@@ -618,8 +699,28 @@ something something preocupied with whether they could
 
         if (result['@type'] === 'messages')
         {
+            if (result.messages[0]?.content["@type"] == "messageVideo")
+            {
+                console.log(result);
+            }
+            // means we ran out of messages in the channel entirely?
+            // and we should stop checking it for new messages.
+            if (result.total_count == 0) 
+            {
+                channels[chatId].exhausted = true;
+                console.log("CHANNEL ECHAUSTED. WAS THIS CORRECT?");
+                console.log(channels[chatId]);
+            }
             for (const message of result.messages)
             {
+                // not the nicest solution.
+                // problem where messages would duplicate if loadMessageFromChannel gets called in a spammy manner.
+                // maybe if the function waited until latestMessage got updated?
+                // TODO: look into more elegant solution. For now this works.
+                if (message.id in allMessages) // we got the same message twice. reject it!
+                    continue;
+                allMessages[message.id] = {};
+
                 var id = message.media_album_id;
                 if (message.media_album_id == 0)
                     id = message.id;
@@ -631,50 +732,42 @@ something something preocupied with whether they could
                 var contentType = message.content["@type"];
                 if (contentType == "messageText")
                 {
-                    createMessage(message.id, chatId, chatTitle, message);
-                    setReplyCount(id, message);
-                    setCaption(id, message, message.content.text.text);
+                    if (!(id in loadedMessages)) // new message
+                        createMessage(message.id, chatId, chatTitle, message);
+                    await setReplyCount(id, message);
+                    await setCaption(id, message, message.content.text.text);
                 }
                 else if (contentType == "messagePhoto")
                 {
-                    // TODO: Lightbox
-
                     if (!(id in loadedMessages)) // new message
                         createMessage(id, chatId, chatTitle, message)
-                    setReplyCount(id, message);
-                    setCaption(id, message, message.content.caption.text);
-
-                    addImage(id, message, message.content.photo.sizes[0].photo);
+                    await setReplyCount(id, message);
+                    await setCaption(id, message, message.content.caption.text);
+                    await addImage(id, message, message.content.photo.sizes[0].photo);
                 }
                 else if (contentType == "messageVideo")
                 {
-                    console.log(message)
                     if (!(id in loadedMessages)) // new message
                         createMessage(id, chatId, chatTitle, message)
-                    setReplyCount(id, message);
-                    setCaption(id, message, message.content.caption.text);
-
-                    addVideo(id, message, message.content.video.video, message.content.video.thumbnail.file, true)
-                    
+                    await setReplyCount(id, message);
+                    await setCaption(id, message, message.content.caption.text);
+                    await addVideo(id, message, message.content.video.video, message.content.video.thumbnail.file, true)
                 }
                 else if (contentType == "messageAnimation")
                 {
                     if (!(id in loadedMessages)) // new message
                         createMessage(id, chatId, chatTitle, message)
-
-                    setReplyCount(id, message);
-                    setCaption(id, message, message.content.caption.text);
-
-                    addVideo(id, message, message.content.animation.animation, message.content.animation.thumbnail.file, false)
+                    await setReplyCount(id, message);
+                    await setCaption(id, message, message.content.caption.text);
+                    await addVideo(id, message, message.content.animation.animation, message.content.animation.thumbnail.file, false)
                 }
                 else if (contentType == "messageDocument")
                 {
                     if (!(id in loadedMessages)) // new message
                         createMessage(id, chatId, chatTitle, message)
-
-                    setReplyCount(id, message);
-                    setCaption(id, message, message.content.caption.text);
-                    addImage(id, message, message.content.document.thumbnail.file);
+                    await setReplyCount(id, message);
+                    await setCaption(id, message, message.content.caption.text);
+                    await addImage(id, message, message.content.document.thumbnail.file);
                 }
                 else if (contentType == "messageChatChangeTitle")
                 {
@@ -693,8 +786,8 @@ something something preocupied with whether they could
                     if (!(id in loadedMessages)) // new message
                         createMessage(id, chatId, chatTitle, message)
 
-                    setReplyCount(id, message);
-                    setCaption(id, message, "");
+                    await setReplyCount(id, message);
+                    await setCaption(id, message, "");
                     var img = await addImage(id, message, message.content.sticker.thumbnail.file);
 
                     // force stickers to be 256x256
@@ -704,7 +797,6 @@ something something preocupied with whether they could
                 {
                     appendMessage(chatId, chatTitle, "This message type (" + message.content["@type"] + ") is not yet suported, go harass @Torvid about it.");
                 }
-
             }
         }
     }
@@ -741,7 +833,7 @@ something something preocupied with whether they could
         return DOMmessage;
     }
 
-    doneLoading = false;
+    var doneLoading = false;
     var sameCount = 0;
     var lastChannelCount;
 
@@ -766,9 +858,18 @@ something something preocupied with whether they could
                 console.log("DONE LOADING!");
                 clearInterval(startupDelayChecker);
                 doneLoading = true;
+                Startup();
             }
         }
     }, 100);
+
+    // Called once things are done loading.
+    async function Startup()
+    {
+        DOMmainView.hidden = false;
+        
+        console.log(user);
+    }
 
     async function update(data)
     {
@@ -858,9 +959,13 @@ something something preocupied with whether they could
             }
             else if (state == "authorizationStateReady")
             {
-                DOMmainView.hidden = false;
-
                 getChats();
+
+                // hoist
+                user = await client.send({
+                    "@type": "getMe",
+                });
+                DOMlogUserID.textContent = "user_id: " + user.id;
             }
         }
 
@@ -868,8 +973,9 @@ something something preocupied with whether they could
         {
             if (data.chat.type["@type"] == "chatTypeSupergroup" && data.chat.type.is_channel)
             {
-                if (data.chat.title != "Torvid Content")
-                    return;
+                //if (data.chat.title != "Torvid Content")
+                //    return;
+
                 const supergroup = await client.send({
                     '@type': 'getSupergroup',
                     supergroup_id: data.chat.type.supergroup_id,
@@ -881,7 +987,6 @@ something something preocupied with whether they could
                     supergroup.status["@type"] === 'chatMemberStatusAdministrator' ||
                     supergroup.status["@type"] === 'chatMemberStatusRestricted')
                 {
-
                     channels[data.chat.id] = {};
                     channels[data.chat.id].title = data.chat.title
                     channels[data.chat.id].loadedMessageCount = 0;
@@ -898,6 +1003,21 @@ something something preocupied with whether they could
                     // load one thing form every channel
                     loadMessageFromChannel(data.chat.id, data.chat.title);
                 }
+                if (supergroup.status["@type"] === 'chatMemberStatusCreator')
+                {
+                    const chatInfo = await client.send({
+                        "@type": "getSupergroupFullInfo",
+                        supergroup_id: supergroup.id,
+                    });
+
+                    // the "timeline" channel description ends with your user ID, so it can be found here.
+                    // mmmm yes sneaking in metadata my beloved.
+                    if (chatInfo.description.endsWith(user.id))
+                    {
+                        // hoist
+                        timelineChannel = data.chat
+                    }
+                }
             }
         }
     }
@@ -906,7 +1026,7 @@ something something preocupied with whether they could
     {
         logVerbosityLevel: 1,
         jsLogVerbosityLevel: 3,
-        mode: 'wasm', // 'wasm-streaming'/'wasm'/'asmjs'
+        mode: 'wasm',
         prefix: 'tdlib',
         readOnly: false,
         isBackground: false,
@@ -914,6 +1034,6 @@ something something preocupied with whether they could
         wasmUrl: `3dee0f934ca1a5946a253599e3e442c6.wasm`,
         onUpdate: update
     };
-    // hoist
-    client = new tdweb.default(options)
+
+    var client = new tdweb.default(options)
 </script>
