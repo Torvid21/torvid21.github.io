@@ -130,8 +130,6 @@ something something preocupied with whether they could
     }
 
     message-interactions {
-        display: unset;
-        height: 0em;
         margin: 2em;
         position: relative;
         top: 0em;
@@ -485,8 +483,6 @@ something something preocupied with whether they could
             //    },
             //});
             //console.log(setphotoresult);
-
-            //console.log(result);
         }
 
         // Send a text message to the channel
@@ -508,6 +504,26 @@ something something preocupied with whether they could
         addMessage(timelineChannel.id, result, timelineChannel.title);
     }
 
+
+    function MakeRetweetFunction(inner_id, inner_chatId)
+    {
+        return async function()
+        {
+            var fwd = loadedMessages[inner_id].messages;
+            var msgs = [];
+            for (var i = 0; i < fwd.length; i++)
+            {
+                msgs.push(fwd[i].id)
+            }
+            client.send({
+                '@type': 'forwardMessages',
+                from_chat_id: inner_chatId,
+                chat_id: timelineChannel.id,
+                message_ids: msgs,
+            });
+        }
+    }
+
     // Creates a message and appends it to the DOM
     function createMessage(id, chatId, username, message)
     {
@@ -516,6 +532,10 @@ something something preocupied with whether they could
         var viewcount = message.interaction_info.view_count;
 
         loadedMessages[id] = {};
+        if (loadedMessages[id].messages == undefined)
+            loadedMessages[id].messages = []
+        loadedMessages[id].messages.push(message);
+
         var firstChildThatIsOlderThanNewMessage = undefined
         for (const child of DOMchannelList.children)
         {
@@ -542,7 +562,6 @@ something something preocupied with whether they could
 
         DOMmessage.hidden = true;
 
-
         channels[chatId].latestDOMmessage = DOMmessage;
         loadedMessages[id].DOMmessage = DOMmessage;
 
@@ -565,6 +584,11 @@ something something preocupied with whether they could
         loadedMessages[id].DOMretweet = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         loadedMessages[id].DOMretweet.setAttribute("class", "retweet");
         loadedMessages[id].DOMretweet.appendChild(document.createElement("span")).textContent = forwardcount;
+
+        
+
+        loadedMessages[id].DOMretweet.addEventListener("click", MakeRetweetFunction(id, chatId));
+
 
         var DOMviews = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         DOMviews.setAttribute("class", "views");
@@ -607,7 +631,6 @@ something something preocupied with whether they could
                 }
             }
 
-            //console.log(smallest);
             await loadMessageFromChannel(smallestID, smallest.title)
         }
     }
@@ -639,8 +662,8 @@ something something preocupied with whether they could
                     '@type': 'downloadFile',
                     file_id: file.id,
                     priority: 1,
-                    offset: offset,
-                    limit: DLSize,
+                    offset: offset, // where in the file to start downloading
+                    limit: DLSize, // how much to download in bytes
                     synchronous: true, // download the file synchronously
                 });
             }
@@ -754,7 +777,7 @@ something something preocupied with whether they could
         if (contentType == "messageText")
         {
             if (!(id in loadedMessages)) // new message
-                createMessage(message.id, chatId, chatTitle, message);
+                createMessage(id, chatId, chatTitle, message);
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.text.text);
         }
@@ -794,7 +817,6 @@ something something preocupied with whether they could
         {
             if (!(id in loadedMessages)) // new message
                 createMessage(id, chatId, chatTitle, message)
-
             await setReplyCount(id, message);
             await setCaption(id, message, "");
             var img = await addImage(id, message, message.content.sticker.thumbnail.file);
@@ -839,6 +861,7 @@ something something preocupied with whether they could
             }
             for (const message of result.messages)
             {
+                console.log(message);
                 addMessage(chatId, message, chatTitle);
             }
         }
@@ -1047,6 +1070,9 @@ something something preocupied with whether they could
                 //if (data.chat.title != "Torvid Content")
                 //    return;
 
+                if (data.chat.title.includes("Poss"))
+                    return;
+
                 const supergroup = await client.send({
                     '@type': 'getSupergroup',
                     supergroup_id: data.chat.type.supergroup_id,
@@ -1070,7 +1096,7 @@ something something preocupied with whether they could
                     {
                         channels[data.chat.id].profilePicture = "missing-picture.png";
                     }
-                    console.log(data.chat);
+
                     // load one thing form every channel
                     loadMessageFromChannel(data.chat.id, data.chat.title);
                 }
@@ -1085,7 +1111,6 @@ something something preocupied with whether they could
                     // mmmm yes sneaking in metadata my beloved.
                     if (chatInfo.description.endsWith(user.id))
                     {
-                        // hoist
                         timelineChannel = data.chat
                     }
                 }
