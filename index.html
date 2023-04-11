@@ -342,28 +342,37 @@ something something preocupied with whether they could
         <div id="codeVerifyError"></div>
     </div>
 
-    <div id="Home">
-        <h1>Home</h1>
-
-        <span>What's happening?</span>
-        <br />
-        <div class="messageInput">
-            <textarea id="messageTextbox"></textarea>
-            <input type="button" id="messageSendButton" value="Send">
-        </div>
-    </div>
-
-    <div id="Channel">
-        <h1>Channel</h1>
-    </div>
-
-    <div id="Thread">
-        <h1>Thread</h1>
+    <div id="passwordVerify">
+        <label for="phone">Two-factor auth is enabled, Enter your telegram password:</label><br />
+        <input type="password" id="passwordNumber" name="phone">
+        <input type="button" id="passwordButton" value="ok">
+        <div id="passwordVerifyError"></div>
     </div>
 
     <div id="mainView">
+
+        <div id="Home">
+            <h1>Home</h1>
+
+            <span>What's happening?</span>
+            <br />
+            <div class="messageInput">
+                <textarea id="messageTextbox"></textarea>
+                <input type="button" id="messageSendButton" value="Send">
+            </div>
+        </div>
+
+        <div id="Channel">
+            <h1>Channel</h1>
+        </div>
+
+        <div id="Thread">
+            <h1>Thread</h1>
+        </div>
+
         <p id="channelList">
         </p>
+
     </div>
 
     <center>
@@ -457,10 +466,6 @@ something something preocupied with whether they could
     var current_status = status_waitPhoneNumber
 
 
-    //var bSingleChannel = false;
-    //var bSingleMessage = false;
-    //var bMainTimeline = false;
-
     const urlParams = new URLSearchParams(window.location.search);
     var channel_name_or_id = urlParams.get("channel");
     var channel_message_id = urlParams.get("message");
@@ -490,6 +495,12 @@ something something preocupied with whether they could
     var DOMcodeButton = document.getElementById("codeButton");
     var DOMcodeNumber = document.getElementById("codeNumber");
     DOMcodeVerify.hidden = true;
+    
+    var DOMpasswordVerify = document.getElementById("passwordVerify");
+    var DOMpasswordVerifyError = document.getElementById("passwordVerifyError");
+    var DOMpasswordButton = document.getElementById("passwordButton");
+    var DOMpasswordNumber = document.getElementById("passwordNumber");
+    DOMpasswordVerify.hidden = true;
 
     var DOMmainView = document.getElementById("mainView");
     var DOMtestButton = document.getElementById("testButton");
@@ -587,12 +598,8 @@ something something preocupied with whether they could
         }
         var DOMmessage = document.createElement("message");
 
-        if (bIsComment)
-        {
-            DOMmessage.setAttribute("class", "comment");
-            DOMchannelList.appendChild(DOMmessage);
-        }
-        else
+       
+        if (!bIsComment)
         {
             //if (firstChildThatIsOlderThanNewMessage)
             //    DOMchannelList.insertBefore(DOMmessage, firstChildThatIsOlderThanNewMessage.nextSibling);
@@ -647,20 +654,31 @@ something something preocupied with whether they could
         }
         else
         {
-            if (channels[chat.id].chat.photo)
+            console.log(message);
+            if (bIsComment)
             {
-                profile_pic = channels[chat.id].chat.photo;//await loadImage(channels[chat.id].chat.photo.small);
-                //profile_pic = "data:image/jpeg;base64," + channels[chat.id].chat.photo.minithumbnail.data;
-            }
-            //else
-            //{
-            //    profile_pic = "missing-picture.png"
-            //}
+                if (message.sender_id["@type"] == "messageSenderUser")
+                {
+                    var user = await client.send({
+                        "@type": "getUser",
+                        "user_id": message.sender_id.user_id,
+                    });
 
-            title = chat.title;
-            username = channels[chat.id].supergroup.username
-            if (!username)
-                username = chat.id
+                    if (user.profile_photo)
+                        profile_pic = user.profile_photo;
+                    title = user.first_name;
+                    username = user.username;
+                }
+            }
+            else
+            {
+                if (channels[chat.id].chat.photo)
+                    profile_pic = channels[chat.id].chat.photo;
+                title = chat.title;
+                username = channels[chat.id].supergroup.username
+                if (!username)
+                    username = chat.id
+            }
         }
 
         loadedMessages[id] = {};
@@ -676,6 +694,13 @@ something something preocupied with whether they could
             channels[chat.id].latestDOMmessage.hidden = false;
             channels[chat.id].latestDOMmessage.parentNode.appendChild(channels[chat.id].latestDOMmessage); // move it to the bottom
         }
+        // do this after rearranging so the comments always show up last
+        if (bIsComment)
+        {
+            DOMmessage.setAttribute("class", "comment");
+            DOMchannelList.appendChild(DOMmessage);
+        }
+
         if (!bCommentsEnabled)
             DOMloader.hidden = true;
 
@@ -1213,6 +1238,7 @@ something something preocupied with whether they could
                         limit: 100,
                     });
 
+                    console.log(result.messages);
                     for (const message of result.messages)
                     {
                         addMessage(message, chat, false, true);
@@ -1292,28 +1318,28 @@ something something preocupied with whether they could
         //    },
         //});
 
-        //// 4. Make it public.
-        //var public_username = user.username + "_Timeline6";
-        //
-        //const isUsernameAvailable = await client.send({
-        //    "@type": "checkChatUsername",
-        //    chat_id: chat.id,
-        //    username: public_username,
-        //});
-        //
-        //if (!isUsernameAvailable)
-        //{
-        //    // TODO: handle this more gracefully. try again a bunch of times with alernate names?
-        //    console.log("failed to make the channel public. PANIC.");
-        //    return;
-        //}
-        //
-        //// don't wait for this, as it takes a while.
-        //client.send({
-        //    "@type": "setSupergroupUsername",
-        //    supergroup_id: chat.type.supergroup_id,
-        //    username: public_username,
-        //});
+        // 4. Make it public.
+        var public_username = user.username + "_Timeline";
+        
+        const isUsernameAvailable = await client.send({
+            "@type": "checkChatUsername",
+            chat_id: chat.id,
+            username: public_username,
+        });
+        
+        if (!isUsernameAvailable)
+        {
+            // TODO: handle this more gracefully. try again a bunch of times with alernate names?
+            console.log("failed to make the channel public. PANIC.");
+            return;
+        }
+        
+        // don't wait for this, as it takes a while.
+        client.send({
+            "@type": "setSupergroupUsername",
+            supergroup_id: chat.type.supergroup_id,
+            username: public_username,
+        });
 
         timelineChannel = chat;
     }
@@ -1408,6 +1434,7 @@ something something preocupied with whether they could
                     {
                         DOMphoneVerifyError.innerText = "Invalid Phone Number. Make sure you use the country code."
                     }
+                    DOMphoneNumber.value = "";
                     if (result && result["@type"] == 'ok')
                     {
                         break;
@@ -1438,6 +1465,7 @@ something something preocupied with whether they could
                     {
                         DOMcodeVerifyError.innerText = "Invalid Code. Check telegram for it."
                     }
+                    DOMcodeNumber.value = "";
                     if (result && result["@type"] == 'ok')
                     {
                         break;
@@ -1451,7 +1479,32 @@ something something preocupied with whether they could
             }
             else if (state == "authorizationStateWaitPassword")
             {
+                DOMpasswordVerify.hidden = false;
+                while (true)
+                {
+                    await waitListener(DOMpasswordButton, "click");
 
+                    var result = undefined;
+                    try
+                    {
+                        result = await client.send({
+                            '@type': 'checkAuthenticationPassword',
+                            password: DOMpasswordNumber.value,
+                        });
+                    }
+                    catch
+                    {
+                        DOMpasswordVerifyError.innerText = "Invalid Password. D: Try again?"
+                    }
+                    DOMpasswordNumber.value = "";
+                    if (result && result["@type"] == 'ok')
+                    {
+                        break;
+                    }
+
+                }
+                // TODO
+                DOMpasswordVerify.hidden = true;
             }
             else if (state == "authorizationStateReady")
             {
