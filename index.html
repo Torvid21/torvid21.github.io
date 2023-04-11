@@ -96,14 +96,15 @@ something something preocupied with whether they could
         height: 50%;
         transition: background-color 0.1s;
     }
+        message.comment {
+            margin-left: 5em;
+            width: 33em;
+        }
 
     message-caption {
         display: block;
         padding: 0.5em;
         white-space: break-spaces;
-    }
-
-    message-title {
     }
 
     message:hover {
@@ -129,12 +130,15 @@ something something preocupied with whether they could
         display: block;
         width: fit-content;
     }
+    message-profile span:hover {
+        text-decoration: underline;
+    }
 
     message-content {
         left: 4.5em;
         top: -3em;
         position: relative;
-        max-width: 30em;
+        max-width: 29em;
         width: fit-content;
         display: block;
     }
@@ -305,14 +309,17 @@ something something preocupied with whether they could
 </head>
 
 <body>
-    <h1>Telegram Timeline</h1>
+
+    <a href="/"><h1>Telegram Timeline</h1></a>
 
     <div style="white-space: break-spaces;">
-        this is going to be crazy
-        in development!
+        <!--This is going to be crazy.
+        Very in-development, feel free to poke @Torvid if you find bugs!-->
+        idk why I created this.
+        Twitter except secretly it's telegram
     </div>
 
-    <div id="status">
+    <div id="status" hidden>
         <p id="state">state: </p>
         <p id="auth_state">auth_state: </p>
         <p id="user_id">user_id: </p>
@@ -335,15 +342,26 @@ something something preocupied with whether they could
         <div id="codeVerifyError"></div>
     </div>
 
-    <div id="mainView">
-        <span>write a message!</span>
-        <br />
+    <div id="Home">
+        <h1>Home</h1>
 
+        <span>What's happening?</span>
+        <br />
         <div class="messageInput">
             <textarea id="messageTextbox"></textarea>
-            <input type="button" id="messageSendButton" value="send">
+            <input type="button" id="messageSendButton" value="Send">
         </div>
+    </div>
 
+    <div id="Channel">
+        <h1>Channel</h1>
+    </div>
+
+    <div id="Thread">
+        <h1>Thread</h1>
+    </div>
+
+    <div id="mainView">
         <p id="channelList">
         </p>
     </div>
@@ -430,12 +448,23 @@ something something preocupied with whether they could
     var channels = {}
     var user = undefined; // current user
     var timelineChannel = undefined // your timeline channel
-    var bSingleChannel = false;
-    var bSingleMessage = false;
-    var bSingleChannelFound = false;
+
+    var status_waitPhoneNumber = "waitPhoneNumber" // wating for phone number
+    var status_waitCode = "waitCode" // waiting for code auth
+    var status_home = "home" // home, viewing your feed of all messages
+    var status_channel = "channel" // viewing a single channel/user
+    var status_thread = "thread" // viewing a single message
+    var current_status = status_waitPhoneNumber
+
+
+    //var bSingleChannel = false;
+    //var bSingleMessage = false;
+    //var bMainTimeline = false;
+
     const urlParams = new URLSearchParams(window.location.search);
     var channel_name_or_id = urlParams.get("channel");
     var channel_message_id = urlParams.get("message");
+
 
     // nukes all loaded messages
     async function reset()
@@ -467,6 +496,10 @@ something something preocupied with whether they could
     var DOMchannelList = document.getElementById("channelList");
     var DOMmessageSendButton = document.getElementById("messageSendButton");
     var DOMmessageTextbox = document.getElementById("messageTextbox");
+
+    var DOMhome = document.getElementById("Home");
+    var DOMchannel = document.getElementById("Channel");
+    var DOMthread = document.getElementById("Thread");
 
     var DOMloader = document.getElementById("loader");
 
@@ -521,15 +554,63 @@ something something preocupied with whether they could
         });
 
         DOMmessageTextbox.value = "";
-        addMessage(result, timelineChannel);
+        addMessage(result, timelineChannel, false);
+    }
+
+    async function setProfilePicEventually(img, photo)
+    {
+        if (!photo)
+        {
+            img.src = "missing-picture.png"
+            return;
+        }
+
+        // 1. immedietly set it to the mini pic
+        img.src = "data:image/jpeg;base64," + photo.minithumbnail.data;
+
+        // 2. slowly download the full pic and set it.
+        img.src = await loadImage(photo.small);
     }
 
     // Creates a message and appends it to the DOM
-    async function createMessage(id, chat, message)
+    async function createMessage(id, chat, message, use_hiding = true, bIsComment = false)
     {
+        // Create and append the message tag to the DOM immedietly
+        var firstChildThatIsOlderThanNewMessage = undefined
+        for (const child of DOMchannelList.children)
+        {
+            if (date > child.getAttribute("timestamp"))
+            {
+                firstChildThatIsOlderThanNewMessage = child
+                break;
+            }
+        }
+        var DOMmessage = document.createElement("message");
+
+        if (bIsComment)
+        {
+            DOMmessage.setAttribute("class", "comment");
+            DOMchannelList.appendChild(DOMmessage);
+        }
+        else
+        {
+            //if (firstChildThatIsOlderThanNewMessage)
+            //    DOMchannelList.insertBefore(DOMmessage, firstChildThatIsOlderThanNewMessage.nextSibling);
+            //else
+            DOMchannelList.appendChild(DOMmessage);
+        }
+
+
+
         var date = message.date;
-        var forwardcount = message.interaction_info.forward_count;
-        var viewcount = message.interaction_info.view_count;
+
+        var forwardcount = 0
+        var viewcount = 0
+        if (message.interaction_info)
+        {
+            message.interaction_info.forward_count;
+            message.interaction_info.view_count;
+        }
 
         var bCommentsEnabled = channels[chat.id].supergroup.has_linked_chat;
 
@@ -547,14 +628,14 @@ something something preocupied with whether they could
                     "user_id": message.forward_info.origin.sender_user_id,
                 });
                 username = user.username;
-                profile_pic = await loadImage(user.profile_photo.small);
+                profile_pic = user.profile_photo;//await loadImage(user.profile_photo.small);
             }
             else if (message.forward_info.origin["@type"] == "messageForwardOriginChannel")
             {
                 var channel = channels[message.forward_info.origin.chat_id];
                 if (channel)
                 {
-                    profile_pic = await loadImage(channel.chat.photo.small);
+                    profile_pic = channel.chat.photo;//await loadImage(channel.chat.photo.small);
                     title = channel.chat.title
                     username = channel.supergroup.username
                     if (!username)
@@ -568,13 +649,13 @@ something something preocupied with whether they could
         {
             if (channels[chat.id].chat.photo)
             {
-                profile_pic = await loadImage(channels[chat.id].chat.photo.small);
+                profile_pic = channels[chat.id].chat.photo;//await loadImage(channels[chat.id].chat.photo.small);
                 //profile_pic = "data:image/jpeg;base64," + channels[chat.id].chat.photo.minithumbnail.data;
             }
-            else
-            {
-                profile_pic = "missing-picture.png"
-            }
+            //else
+            //{
+            //    profile_pic = "missing-picture.png"
+            //}
 
             title = chat.title;
             username = channels[chat.id].supergroup.username
@@ -587,35 +668,19 @@ something something preocupied with whether they could
             loadedMessages[id].messages = []
         loadedMessages[id].messages.push(message);
 
-        var firstChildThatIsOlderThanNewMessage = undefined
-        for (const child of DOMchannelList.children)
-        {
-            if (date > child.getAttribute("timestamp"))
-            {
-                firstChildThatIsOlderThanNewMessage = child
-                break;
-            }
-        }
-        
-        var DOMmessage = document.createElement("message");
 
-
-        if (firstChildThatIsOlderThanNewMessage)
-        {
-            DOMchannelList.insertBefore(DOMmessage, firstChildThatIsOlderThanNewMessage);
-        }
-        else
-        {
-            DOMchannelList.appendChild(DOMmessage);
-        }
 
         if (channels[chat.id].latestDOMmessage)
         {
             DOMloader.hidden = true;
             channels[chat.id].latestDOMmessage.hidden = false;
+            channels[chat.id].latestDOMmessage.parentNode.appendChild(channels[chat.id].latestDOMmessage); // move it to the bottom
         }
+        if (!bCommentsEnabled)
+            DOMloader.hidden = true;
 
-        DOMmessage.hidden = true;
+        if(use_hiding)
+            DOMmessage.hidden = true;
 
         channels[chat.id].latestDOMmessage = DOMmessage;
         loadedMessages[id].DOMmessage = DOMmessage;
@@ -663,7 +728,7 @@ something something preocupied with whether they could
 
             if (bHitMessage) // go to message / comments
             {
-                window.location.href = "?channel=" + username + "&message=" + chat.id;
+                window.location.href = "?channel=" + username + "&message=" + message.id;
             }
             else if (bHitProfile) // go to profile
             {
@@ -717,7 +782,12 @@ something something preocupied with whether they could
 
         loadedMessages[id].DOMtimestamp = DOMmessage.appendChild(document.createElement("message-timestamp"));
 
-        loadedMessages[id].DOMprofileImg.src = profile_pic;
+        //loadedMessages[id].DOMprofileImg.src = profile_pic;
+
+        // async function that sets the picture later when it feels like it. :)
+
+        setProfilePicEventually(loadedMessages[id].DOMprofileImg, profile_pic)
+
         loadedMessages[id].DOMprofileUsername.textContent = title
         loadedMessages[id].DOMtimestamp.textContent = getNiceTime(new Date(date * 1000));
     }
@@ -725,6 +795,9 @@ something something preocupied with whether they could
     async function loadMore()
     {
         if (!doneLoading)
+            return;
+
+        if (current_status == status_thread) // If in this state, we should read comments instead.
             return;
 
         //for (var j = 0; j < 5; j++)
@@ -824,7 +897,7 @@ something something preocupied with whether they could
     }
     async function setReplyCount(id, message)
     {
-        if (loadedMessages[id].DOMreplyText.textContent == 0 && message.interaction_info.reply_info)
+        if (loadedMessages[id].DOMreplyText.textContent == 0 && message.interaction_info && message.interaction_info.reply_info)
             loadedMessages[id].DOMreplyText.textContent = message.interaction_info.reply_info.reply_count;
     }
     async function addImage(id, message, image)
@@ -833,7 +906,7 @@ something something preocupied with whether they could
 
         var img = document.createElement('img');
 
-        images.insertBefore(img, images.firstChild);
+        images.prepend(img);
 
         loadImage(image).then((src) =>
         {
@@ -846,7 +919,7 @@ something something preocupied with whether they could
         var thumbnailPath = await loadImage(thumbnail);
         var DOMvideo = document.createElement('video');
         var images = loadedMessages[id].DOMimages;
-        images.insertBefore(DOMvideo, images.firstChild);
+        images.prepend(DOMvideo);
 
         if (controls)
         {
@@ -913,9 +986,8 @@ something something preocupied with whether they could
 
 
     // high level function to download and add a message to the timeline.
-    async function addMessage(message, chat)
+    async function addMessage(message, chat, use_hiding = true, bIsComment = false)
     {
-
         allMessages[message.id] = {};
 
         var id = message.media_album_id;
@@ -929,14 +1001,14 @@ something something preocupied with whether they could
         if (contentType == "messageText")
         {
             if (!(id in loadedMessages)) // new message
-                await createMessage(id, chat, message);
+                await createMessage(id, chat, message, use_hiding, bIsComment);
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.text.text);
         }
         else if (contentType == "messagePhoto")
         {
             if (!(id in loadedMessages)) // new message
-                await createMessage(id, chat, message)
+                await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
             await addImage(id, message, message.content.photo.sizes[0].photo);
@@ -944,7 +1016,7 @@ something something preocupied with whether they could
         else if (contentType == "messageVideo")
         {
             if (!(id in loadedMessages)) // new message
-                await createMessage(id, chat, message)
+                await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
             await addVideo(id, message, message.content.video.video, message.content.video.thumbnail.file, true)
@@ -952,7 +1024,7 @@ something something preocupied with whether they could
         else if (contentType == "messageAnimation")
         {
             if (!(id in loadedMessages)) // new message
-                await createMessage(id, chat, message)
+                await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
             await addVideo(id, message, message.content.animation.animation, message.content.animation.thumbnail.file, false)
@@ -960,7 +1032,7 @@ something something preocupied with whether they could
         else if (contentType == "messageDocument")
         {
             if (!(id in loadedMessages)) // new message
-                await createMessage(id, chat, message)
+                await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
             await addImage(id, message, message.content.document.thumbnail.file);
@@ -968,7 +1040,7 @@ something something preocupied with whether they could
         else if (contentType == "messageSticker")
         {
             if (!(id in loadedMessages)) // new message
-                await createMessage(id, chat, message)
+                await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, "");
             var img = await addImage(id, message, message.content.sticker.thumbnail.file);
@@ -976,6 +1048,20 @@ something something preocupied with whether they could
             // force stickers to be 256x256
             img.setAttribute("style", "width:256px")
         }
+    }
+
+    async function loadSingleMessage(chat, message_id)
+    {
+        var message = await client.send({
+            '@type': 'getMessage',
+            chat_id: chat.id,
+            message_id: message_id,
+        });
+
+        await addMessage(message, chat, false);
+
+        return message;
+
     }
 
     async function loadMessageFromChannel(chat)
@@ -1029,7 +1115,7 @@ something something preocupied with whether they could
     var loadCount = 0;
     var startupDelayChecker = setInterval(function ()
     {
-        if (bSingleChannel)
+        if (current_status == status_channel || current_status == status_thread)
         {
             console.log("DONE LOADING!");
             clearInterval(startupDelayChecker);
@@ -1037,6 +1123,7 @@ something something preocupied with whether they could
             Startup();
             return;
         }
+
         if (loadCount == 0)
             return;
 
@@ -1065,16 +1152,35 @@ something something preocupied with whether they could
         DOMmainView.hidden = false;
 
         // If we want a single channel, but it was not found, search for it.
-        if (bSingleChannel && !bSingleChannelFound)
+        if (current_status == status_channel || current_status == status_thread)
         {
-            var bFound = false;
+            var chat = undefined
             try
             {
-                var chat = await client.send({
-                    '@type': 'searchPublicChat',
-                    username: channel_name_or_id,
+                console.log(`Trying to load channel ${channel_name_or_id} as chat ID`);
+                chat = await client.send({
+                    '@type': 'getChat',
+                    chat_id: channel_name_or_id,
                 });
+            }
+            catch (exceptionVar)
+            {
+                try
+                {
+                    console.log(`Trying to load channel ${channel_name_or_id} as public chat by Name`);
+                    chat = await client.send({
+                        '@type': 'searchPublicChat',
+                        username: channel_name_or_id,
+                    });
+                }
+                catch (exceptionVar)
+                {
+                    console.log(`Loading chat failed.`);
+                }
+            }
 
+            if (chat)
+            {
                 const supergroup = await client.send({
                     '@type': 'getSupergroup',
                     supergroup_id: chat.type.supergroup_id,
@@ -1092,93 +1198,124 @@ something something preocupied with whether they could
                 channels[chat.id].zeroCount = 0;
 
                 // load one thing form every channel
-                loadMessageFromChannel(chat);
+                if (current_status == status_thread)
+                {
+                    // load the first message
+                    var message = await loadSingleMessage(chat, channel_message_id)
+
+                    // load comments
+                    const result = await client.send({
+                        '@type': 'getMessageThreadHistory',
+                        chat_id: chat.id,
+                        message_id: message.id,
+                        from_message_id: 0,
+                        offset: 0,
+                        limit: 100,
+                    });
+
+                    for (const message of result.messages)
+                    {
+                        addMessage(message, chat, false, true);
+                    }
+                }
+                else
+                {
+                    loadMessageFromChannel(chat);
+                }
             }
-            catch (exceptionVar)
+            else
             {
-                console.log(exceptionVar);
                 DOMchannelList.innerText = "Channel named " + channel_name_or_id + " could not be found."
             }
         }
 
-        // channel not found yet, create it!
-        if (!timelineChannel)
-        {
-            // 1. Create the channel
-            const chat = await client.send({
-                "@type": "createNewSupergroupChat",
-                title: user.username + "'s Telegram Timeline",
-                is_channel: true,
-                description: "This channel is your Timeline. \nMessages posted or retweeted on from teletime.net will show up here. \n\nThis last number is your user ID and needs to remain at the end of the description for Teletime to work correctly.\n" + user.id,
-            });
+        createTimelineChannel();
+    }
+
+    async function createTimelineChannel()
+    {
+        //// If we are viewing a single channel or message, we can't post to our own timeline.
+        //if (bSingleChannel || bSingleMessage)
+        //    return;
+        //
+        //// channel not found yet, create it!
+        if (timelineChannel)
+            return;
+
+        // 1. Create the channel
+        const chat = await client.send({
+            "@type": "createNewSupergroupChat",
+            title: user.username + "'s Telegram Timeline",
+            is_channel: true,
+            description: "This channel is your Timeline. \nMessages posted or retweeted on from teletime.net will show up here. \n\nThis last number is your user ID and needs to remain at the end of the description for Teletime to work correctly.\n" + user.id,
+        });
 
 
-            // 2. Enable replies by adding a "discussion group".
-            const discssionGroup = await client.send({
-                "@type": "createNewSupergroupChat",
-                title: "Teletime - Discussion Group.",
-                is_channel: false,
-                description: "This is the discussion group for your telegram timeline. Feel free to ignore it.\n\n" + user.id + "DISCUSS",
-            });
-            await client.send({
-                '@type': 'setChatDiscussionGroup',
-                chat_id: chat.id,
-                discussion_chat_id: discssionGroup.id,
-            });
+        // 2. Enable replies by adding a "discussion group".
+        const discssionGroup = await client.send({
+            "@type": "createNewSupergroupChat",
+            title: "Teletime - Discussion Group.",
+            is_channel: false,
+            description: "This is the discussion group for your telegram timeline. Feel free to ignore it.\n\n" + user.id + "DISCUSS",
+        });
+        await client.send({
+            '@type': 'setChatDiscussionGroup',
+            chat_id: chat.id,
+            discussion_chat_id: discssionGroup.id,
+        });
 
 
-            // 3. Update the profile picture
-            //const uniqueRemoteImageUrl = `$http://212.100.102.124:8000/Coal.png?${Date.now()}`;
-            //console.log(uniqueRemoteImageUrl);
-            //var setphotoresult = await client.send({
-            //    "@type": "setChatPhoto",
-            //    chat_id: chatId,
-            //    photo: {
-            //        "@type": "inputFileGenerated",
-            //        original_path: uniqueRemoteImageUrl,
-            //        conversion: "",
-            //        expected_size: 0,
-            //    },
-            //});
-            //await client.send({
-            //    '@type': 'setChatPhoto',
-            //    chat_id: chat.id,
-            //    photo: {
-            //        '@type': 'inputChatPhotoStatic',
-            //        photo: {
-            //            '@type': 'inputFileGenerated',
-            //            original_path: uniqueRemoteImageUrl,
-            //            conversion: '',
-            //            expected_size: 0,
-            //        },
-            //    },
-            //});
+        // 3. Update the profile picture
+        //const uniqueRemoteImageUrl = `$http://212.100.102.124:8000/Coal.png?${Date.now()}`;
+        //console.log(uniqueRemoteImageUrl);
+        //var setphotoresult = await client.send({
+        //    "@type": "setChatPhoto",
+        //    chat_id: chatId,
+        //    photo: {
+        //        "@type": "inputFileGenerated",
+        //        original_path: uniqueRemoteImageUrl,
+        //        conversion: "",
+        //        expected_size: 0,
+        //    },
+        //});
+        //await client.send({
+        //    '@type': 'setChatPhoto',
+        //    chat_id: chat.id,
+        //    photo: {
+        //        '@type': 'inputChatPhotoStatic',
+        //        photo: {
+        //            '@type': 'inputFileGenerated',
+        //            original_path: uniqueRemoteImageUrl,
+        //            conversion: '',
+        //            expected_size: 0,
+        //        },
+        //    },
+        //});
 
-            //// 4. Make it public.
-            //var public_username = user.username + "_Timeline6";
-            //
-            //const isUsernameAvailable = await client.send({
-            //    "@type": "checkChatUsername",
-            //    chat_id: chat.id,
-            //    username: public_username,
-            //});
-            //
-            //if (!isUsernameAvailable)
-            //{
-            //    // TODO: handle this more gracefully. try again a bunch of times with alernate names?
-            //    console.log("failed to make the channel public. PANIC.");
-            //    return;
-            //}
-            //
-            //// don't wait for this, as it takes a while.
-            //client.send({
-            //    "@type": "setSupergroupUsername",
-            //    supergroup_id: chat.type.supergroup_id,
-            //    username: public_username,
-            //});
+        //// 4. Make it public.
+        //var public_username = user.username + "_Timeline6";
+        //
+        //const isUsernameAvailable = await client.send({
+        //    "@type": "checkChatUsername",
+        //    chat_id: chat.id,
+        //    username: public_username,
+        //});
+        //
+        //if (!isUsernameAvailable)
+        //{
+        //    // TODO: handle this more gracefully. try again a bunch of times with alernate names?
+        //    console.log("failed to make the channel public. PANIC.");
+        //    return;
+        //}
+        //
+        //// don't wait for this, as it takes a while.
+        //client.send({
+        //    "@type": "setSupergroupUsername",
+        //    supergroup_id: chat.type.supergroup_id,
+        //    username: public_username,
+        //});
 
-            timelineChannel = chat;
-        }
+        timelineChannel = chat;
     }
 
     async function getChats()
@@ -1329,6 +1466,11 @@ something something preocupied with whether they could
         }
         else if (type == "updateNewChat")
         {
+            if (!bAuthDone)
+            {
+                bAuthDone = true;
+                authorizationDone();
+            }
             if (data.chat.type["@type"] == "chatTypeSupergroup" && data.chat.type.is_channel)
             {
                 //if (data.chat.title != "Torvid Content")
@@ -1348,35 +1490,25 @@ something something preocupied with whether they could
                 });
 
                 loadCount++;
-
                 // If you are a member
                 if (supergroup.status["@type"] === 'chatMemberStatusMember' ||
                     supergroup.status["@type"] === 'chatMemberStatusCreator' ||
                     supergroup.status["@type"] === 'chatMemberStatusAdministrator' ||
                     supergroup.status["@type"] === 'chatMemberStatusRestricted')
                 {
-                    if (channel_name_or_id)
-                    {
-                        bSingleChannel = true;
-                        var bFound = false;
-                        if (channel_name_or_id == supergroup.username)
-                            bFound = true;
-                        if (channel_name_or_id == data.chat.id)
-                            bFound = true;
-                    
-                        if (!bFound)
-                            return;
-                        bSingleChannelFound = true;
-                    }
-
                     channels[data.chat.id] = {};
                     channels[data.chat.id].chat = data.chat;
                     channels[data.chat.id].supergroup = supergroup;
                     channels[data.chat.id].supergroupInfo = supergroupInfo;
                     channels[data.chat.id].zeroCount = 0
-                    // load one thing form every channel
-                    loadMessageFromChannel(data.chat);
+
+                    if (current_status == status_home)
+                    {
+                        // load one thing form every channel
+                        loadMessageFromChannel(data.chat);
+                    }
                 }
+
                 if (supergroup.status["@type"] === 'chatMemberStatusCreator')
                 {
                     // the "timeline" channel description ends with your user ID, so it can be found here.
@@ -1391,6 +1523,29 @@ something something preocupied with whether they could
         }
     }
 
+    var bAuthDone = false;
+    // Called when auth is completed.
+    function authorizationDone()
+    {
+        DOMhome.hidden = true;
+        DOMchannel.hidden = true;
+        DOMthread.hidden = true;
+
+        current_status = status_home;
+        if (channel_name_or_id)
+        {
+            current_status = status_channel
+
+            if (channel_message_id)
+                current_status = status_thread
+        }
+        if (current_status == status_home)
+            DOMhome.hidden = false;
+        if (current_status == status_channel)
+            DOMchannel.hidden = false;
+        if (current_status == status_thread)
+            DOMthread.hidden = false;
+    }
     let options =
     {
         logVerbosityLevel: 1,
