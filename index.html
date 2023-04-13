@@ -29,7 +29,16 @@
 
     // TODO: add support for commenting inline, comment threading
 
+    // TODO: support for likes
+
+    // TODO: loading replies as sub-threads
+
+    // TODO: make it load the minithumbnail at the right size immedietly
 </script>
+What?
+
+This is Telegram Timeline. It takes all the Channels (not groups or DMs) that you are a member of on Telegram, and puts them all into a singular feed, Just like twitter.
+
 <!--
 teletime.net
 
@@ -72,7 +81,6 @@ something something preocupied with whether they could
         --button-hover: #40678b;
         --user-text: #ffffff;
     }
-
 
     body {
         background-color: var(--background);
@@ -258,20 +266,35 @@ something something preocupied with whether they could
         filter: sepia(100%) saturate(0%) brightness(50%);
     }
 
-    .messageInput {
+    .messageInput, .replyInput {
         display: flex;
         flex-direction: row;
         align-items: flex-start; /* Aligns the items vertically */
-        gap: 10px; /* Optional: Adds space between the textarea and the button */
+        gap: 0.2em; /* Optional: Adds space between the textarea and the button */
     }
-    #messageTextbox {
+    #messageTextbox, #replyTextbox {
         width: 38em;
         min-height: 4em; /* Adjust the height as needed */
         resize: vertical; /* Allows vertical resizing of the textarea */
+        border: 0px solid #ccc;
+        font-family: 'Atkinson Hyperlegible', sans-serif;
+        /* font-style: normal; */
+        font-size: 1em;
+        /* box-sizing: border-box; */
+        border-radius: 0.5em;
+        padding-left: 0.5em;
+        color: white;
+        background-color: #355779;
+        resize: none;
+        outline: none;
     }
-    #messageSendButton {
-        width:5em;
-        height: 4em;
+    #messageSendButton, #replySendButton {
+        width: 5em;
+        height: 5em;
+        background-color: #355779;
+        color: white;
+        border-width: 0;
+        border-radius: 0.5em;
     }
 
 
@@ -306,6 +329,7 @@ something something preocupied with whether they could
 </style>
 
 <head>
+    <!--<meta http-equiv="refresh" content="0; url=https://torvid21.github.io/index.html">-->
 </head>
 
 <body>
@@ -356,9 +380,14 @@ something something preocupied with whether they could
 
             <span>What's happening?</span>
             <br />
-            <div class="messageInput">
+            <div class="messageInput" , id="messageInput">
                 <textarea id="messageTextbox"></textarea>
                 <input type="button" id="messageSendButton" value="Send">
+            </div>
+
+            <div class="messageInput" id="replyInput" hidden>
+                <textarea id="replyTextbox"></textarea>
+                <input type="button" id="replySendButton" value="Send">
             </div>
         </div>
 
@@ -474,6 +503,9 @@ something something preocupied with whether they could
     // nukes all loaded messages
     async function reset()
     {
+        DOMchannelList.innerHTML = "";
+        loadedMessages = [];
+        allMessages = [];
         //window.location.href = "?&channel=magpistreams";
         //window.location.href = "?&private_channel_id=343245532";
     }
@@ -505,8 +537,14 @@ something something preocupied with whether they could
     var DOMmainView = document.getElementById("mainView");
     var DOMtestButton = document.getElementById("testButton");
     var DOMchannelList = document.getElementById("channelList");
+
+    var DOMmessageInput = document.getElementById("messageInput");
     var DOMmessageSendButton = document.getElementById("messageSendButton");
     var DOMmessageTextbox = document.getElementById("messageTextbox");
+
+    var DOMreplyInput = document.getElementById("replyInput");
+    var DOMreplySendButton = document.getElementById("replySendButton");
+    var DOMreplyTextbox = document.getElementById("replyTextbox");
 
     var DOMhome = document.getElementById("Home");
     var DOMchannel = document.getElementById("Channel");
@@ -518,9 +556,11 @@ something something preocupied with whether they could
 
     DOMmessageSendButton.addEventListener("click", function ()
     {
-        sendMessage();
+        if (DOMmessageTextbox.value == "")
+            return;
+        sendMessage(DOMmessageTextbox.value, timelineChannel.id);
+        DOMmessageTextbox.value = "";
     });
-
     DOMmessageTextbox.addEventListener("keydown", function (event)
     {
         if (event.shiftKey)
@@ -531,9 +571,66 @@ something something preocupied with whether they could
         {
             event.preventDefault();
 
-            sendMessage();
+            if (DOMmessageTextbox.value == "")
+                return;
+            sendMessage(DOMmessageTextbox.value, timelineChannel.id);
+            DOMmessageTextbox.value = "";
         }
     });
+
+    var global_chat_id = 0;
+    var global_reply_id = 0;
+    var global_message_thread_id = 0;
+    DOMreplySendButton.addEventListener("click", function ()
+    {
+        if (DOMreplyTextbox.value == "")
+            return;
+        DOMreplyInput.hidden = true;
+        sendMessage(DOMreplyTextbox.value, global_chat_id, global_reply_id, global_message_thread_id);
+        DOMreplyTextbox.value = "";
+    });
+    DOMreplyTextbox.addEventListener("keydown", function (event)
+    {
+        if (event.shiftKey)
+            return;
+        if (event.ctrlKey)
+            return;
+        if (event.key === "Enter")
+        {
+            event.preventDefault();
+
+            if (DOMreplyTextbox.value == "")
+                return;
+            DOMreplyInput.hidden = true;
+            sendMessage(DOMreplyTextbox.value, global_chat_id, global_reply_id, global_message_thread_id);
+            DOMreplyTextbox.value = "";
+        }
+    });
+
+    async function sendMessage(contents, chat_id, reply_to_message_id = 0, message_thread_id = 0)
+    {
+        // Send a text message to the channel
+        const result = await client.send({
+            "@type": "sendMessage",
+            chat_id: chat_id,
+            reply_to_message_id: reply_to_message_id,
+            message_thread_id: message_thread_id,
+            input_message_content: {
+                "@type": "inputMessageText",
+                text: {
+                    "@type": "formattedText",
+                    text: contents,
+                },
+                disable_web_page_preview: false,
+                clear_draft: true,
+            },
+        });
+
+        console.log(result)
+        //window.location.reload(); // TODO: fix
+        //addMessage(result, timelineChannel, false);
+    }
+
 
     var scrollChecker = setInterval(function ()
     {
@@ -543,30 +640,6 @@ something something preocupied with whether they could
             loadMore();
         }
     }, 250);
-
-    async function sendMessage()
-    {
-        if (DOMmessageTextbox.value == "")
-            return;
-
-        // Send a text message to the channel
-        const result = await client.send({
-            "@type": "sendMessage",
-            chat_id: timelineChannel.id,
-            input_message_content: {
-                "@type": "inputMessageText",
-                text: {
-                    "@type": "formattedText",
-                    text: DOMmessageTextbox.value,
-                },
-                disable_web_page_preview: false,
-                clear_draft: true,
-            },
-        });
-
-        DOMmessageTextbox.value = "";
-        addMessage(result, timelineChannel, false);
-    }
 
     async function setProfilePicEventually(img, photo)
     {
@@ -607,8 +680,6 @@ something something preocupied with whether they could
             DOMchannelList.appendChild(DOMmessage);
         }
 
-
-
         var date = message.date;
 
         var forwardcount = 0
@@ -625,6 +696,7 @@ something something preocupied with whether they could
         var title = undefined;
         var profile_pic = undefined;
         var username = undefined;
+
         if (message.forward_info) // if it was forwarded
         {
             // forwarded from a user
@@ -642,7 +714,7 @@ something something preocupied with whether they could
                 var channel = channels[message.forward_info.origin.chat_id];
                 if (channel)
                 {
-                    profile_pic = channel.chat.photo;//await loadImage(channel.chat.photo.small);
+                    profile_pic = channel.chat.photo;
                     title = channel.chat.title
                     username = channel.supergroup.username
                     if (!username)
@@ -654,7 +726,6 @@ something something preocupied with whether they could
         }
         else
         {
-            console.log(message);
             if (bIsComment)
             {
                 if (message.sender_id["@type"] == "messageSenderUser")
@@ -668,6 +739,18 @@ something something preocupied with whether they could
                         profile_pic = user.profile_photo;
                     title = user.first_name;
                     username = user.username;
+                }
+                else if (message.sender_id["@type"] == "messageSenderChat")
+                {
+                    profile_pic = chat.photo;
+                    title = chat.title
+                    const channelSupergroup = await client.send({
+                        '@type': 'getSupergroup',
+                        supergroup_id: chat.type.supergroup_id,
+                    });
+                    username = channelSupergroup.username
+                    if (!username)
+                        username = channel.chat.id
                 }
             }
             else
@@ -685,8 +768,6 @@ something something preocupied with whether they could
         if (loadedMessages[id].messages == undefined)
             loadedMessages[id].messages = []
         loadedMessages[id].messages.push(message);
-
-
 
         if (channels[chat.id].latestDOMmessage)
         {
@@ -761,18 +842,58 @@ something something preocupied with whether they could
             }
         });
 
+        var messageThread = null;
+        try
+        {
+            messageThread = await client.send({
+                '@type': 'getMessageThread',
+                chat_id: chat.id,
+                message_id: message.id,
+            });
+        }
+        catch (err)
+        {
+            console.log(err)
+        }
+        console.log(messageThread);
         loadedMessages[id].DOMreply = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         if (bCommentsEnabled)
+        {
             loadedMessages[id].DOMreply.setAttribute("class", "reply hovercircle");
+            loadedMessages[id].DOMreply.addEventListener("click", function (_DOMmessage, chat, message, thread)
+            {
+                channel = channels[chat.id];
+
+                return async function ()
+                {
+                    if (thread)
+                    {
+                        global_chat_id = thread.chat_id;
+                        global_reply_id = thread.messages[0].id;
+                        global_message_thread_id = thread.message_thread_id;
+                    }
+                    else
+                    {
+                        global_chat_id = message.chat_id;
+                        global_reply_id = message.id;
+                        global_message_thread_id = message.message_thread_id;
+                    }
+                    DOMreplyInput.hidden = false;
+                    _DOMmessage.appendChild(DOMreplyInput);
+                }
+            }(DOMmessage, chat, message, messageThread))
+        }
         else
+        {
             loadedMessages[id].DOMreply.setAttribute("class", "reply disabled");
+        }
         loadedMessages[id].DOMreplyText = loadedMessages[id].DOMreply.appendChild(document.createElement("span"))
         loadedMessages[id].DOMreplyText.textContent = 0;
 
         loadedMessages[id].DOMretweet = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         loadedMessages[id].DOMretweet.setAttribute("class", "retweet hovercircle");
         loadedMessages[id].DOMretweet.appendChild(document.createElement("span")).textContent = forwardcount;
-
+        
         loadedMessages[id].DOMretweet.addEventListener("click", function (inner_id, inner_chatId)
         {
             return async function ()
@@ -792,7 +913,6 @@ something something preocupied with whether they could
             }
         }(id, chat.id));
         
-
         loadedMessages[id].DOMlike = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         loadedMessages[id].DOMlike.setAttribute("class", "like hovercircle");
         loadedMessages[id].DOMlike.appendChild(document.createElement("span")).textContent = 0;
@@ -807,10 +927,7 @@ something something preocupied with whether they could
 
         loadedMessages[id].DOMtimestamp = DOMmessage.appendChild(document.createElement("message-timestamp"));
 
-        //loadedMessages[id].DOMprofileImg.src = profile_pic;
-
         // async function that sets the picture later when it feels like it. :)
-
         setProfilePicEventually(loadedMessages[id].DOMprofileImg, profile_pic)
 
         loadedMessages[id].DOMprofileUsername.textContent = title
@@ -854,12 +971,25 @@ something something preocupied with whether they could
 
     async function loadImage(file)
     {
-        //return loadFile(file, "image/png", null);
+        return loadFile(file, "image/png", null);
+        ////return loadFile(file, "image/png", null);
+        //if (!imageCache.hasOwnProperty(file.id))
+        //{
+        //    imageCache[file.id] = loadFile(file, "image/png", null);
+        //}
+        //return imageCache[file.id];
+    }
+    async function loadFile(file, mime_type, setProgress)
+    {
         if (!imageCache.hasOwnProperty(file.id))
         {
-            imageCache[file.id] = loadFile(file, "image/png", null);
+            const blob = await loadFileBlob(file, mime_type, setProgress)
+            imageCache[file.id] = URL.createObjectURL(blob);
         }
         return imageCache[file.id];
+
+        //const blob = await loadFileBlob(file, mime_type, setProgress)
+        //return URL.createObjectURL(blob);
     }
     async function loadFileBlob(file, mime_type, setProgress)
     {
@@ -915,11 +1045,7 @@ something something preocupied with whether they could
 
         return blob;
     }
-    async function loadFile(file, mime_type, setProgress)
-    {
-        const blob = await loadFileBlob(file, mime_type, setProgress)
-        return URL.createObjectURL(blob);
-    }
+
     async function setReplyCount(id, message)
     {
         if (loadedMessages[id].DOMreplyText.textContent == 0 && message.interaction_info && message.interaction_info.reply_info)
@@ -1086,7 +1212,6 @@ something something preocupied with whether they could
         await addMessage(message, chat, false);
 
         return message;
-
     }
 
     async function loadMessageFromChannel(chat)
@@ -1226,23 +1351,47 @@ something something preocupied with whether they could
                 if (current_status == status_thread)
                 {
                     // load the first message
-                    var message = await loadSingleMessage(chat, channel_message_id)
+                    var message = await client.send({
+                        '@type': 'getMessage',
+                        chat_id: chat.id,
+                        message_id: channel_message_id,
+                    });
 
                     // load comments
+                    console.log("START getMessageThreadHistory");
                     const result = await client.send({
                         '@type': 'getMessageThreadHistory',
                         chat_id: chat.id,
                         message_id: message.id,
                         from_message_id: 0,
                         offset: 0,
-                        limit: 100,
+                        limit: 10,
                     });
+                    console.log("END getMessageThreadHistory");
 
-                    console.log(result.messages);
-                    for (const message of result.messages)
+                    if (result.messages[0])
                     {
-                        addMessage(message, chat, false, true);
+                        // If a thread was found, to be able to reply to the main message
+                        // we need to use the main message from the *thread*, not from the *channel*.
+                        // we find the *thread* message by asking the first reply what it was replying to.
+                        var discussionChat = await client.send({
+                            '@type': 'getChat',
+                            chat_id: result.messages[0].reply_in_chat_id,
+                        });
+                        console.log(discussionChat);
+                        var message = await loadSingleMessage(discussionChat, result.messages[0].reply_to_message_id)
+
+                        for (const message of result.messages)
+                        {
+                            addMessage(message, chat, false, true);
+                        }
                     }
+                    else
+                    {
+                        // if thread was empty, just load the one message directly.
+                        var message = await loadSingleMessage(chat, channel_message_id)
+                    }
+
                 }
                 else
                 {
@@ -1421,7 +1570,7 @@ something something preocupied with whether they could
                     {
                         result = await client.send({
                             '@type': 'setAuthenticationPhoneNumber',
-                            phone_number: DOMphoneNumber.value,
+                            phone_number: DOMphoneNumber.value.replace(/[^+\d]+/g, ""),
                             settings: {
                                 '@type': 'phoneNumberAuthenticationSettings',
                                 allow_flash_call: false,
@@ -1542,6 +1691,7 @@ something something preocupied with whether they could
                     supergroup_id: supergroup.id,
                 });
 
+
                 loadCount++;
                 // If you are a member
                 if (supergroup.status["@type"] === 'chatMemberStatusMember' ||
@@ -1550,10 +1700,39 @@ something something preocupied with whether they could
                     supergroup.status["@type"] === 'chatMemberStatusRestricted')
                 {
                     channels[data.chat.id] = {};
+                    channels[data.chat.id].title = data.chat.title
                     channels[data.chat.id].chat = data.chat;
                     channels[data.chat.id].supergroup = supergroup;
                     channels[data.chat.id].supergroupInfo = supergroupInfo;
                     channels[data.chat.id].zeroCount = 0
+                    channels[data.chat.id].bIsDiscussion = false;
+                    channels[data.chat.id].discussionChannel = null;
+
+                    if (supergroup.has_linked_chat)
+                    {
+                        var discussionChat = await client.send({
+                            '@type': 'getChat',
+                            chat_id: supergroupInfo.linked_chat_id,
+                        });
+                        const discussionSupergroup = await client.send({
+                            '@type': 'getSupergroup',
+                            supergroup_id: discussionChat.type.supergroup_id,
+                        });
+                        const discussionSupergroupInfo = await client.send({
+                            "@type": "getSupergroupFullInfo",
+                            supergroup_id: discussionSupergroup.id,
+                        });
+                        channels[discussionChat.id] = {};
+                        channels[discussionChat.id].title = discussionChat.title
+                        channels[discussionChat.id].chat = discussionChat;
+                        channels[discussionChat.id].supergroup = discussionSupergroup;
+                        channels[discussionChat.id].supergroupInfo = discussionSupergroupInfo;
+                        channels[discussionChat.id].zeroCount = 0
+                        channels[discussionChat.id].bIsDiscussion = true;
+                        channels[discussionChat.id].discussionChannel = null;
+                        channels[discussionChat.id].discussionChannel = channels[discussionChat.id];
+                        channels[data.chat.id].discussionChannel = channels[discussionChat.id];
+                    }
 
                     if (current_status == status_home)
                     {
