@@ -297,7 +297,6 @@ something something preocupied with whether they could
         border-radius: 0.5em;
     }
 
-
     /*taken from w3schools*/
     .loader {
         border: 8px solid #182533;
@@ -419,15 +418,15 @@ something something preocupied with whether they could
     // from here - https://www.npmjs.com/package/last-seen-ago?activeTab=readme
     function getNiceTime(date)
     {
-        var currentTime = Math.floor(Date.now() / 1000) // timestamp in seconds
-        var differenceTime = currentTime - Math.floor(date / 1000);
-        var seconds = differenceTime;
-        var minutes = Math.floor(seconds / 60);
-        var hours = Math.floor(seconds / 3600);
-        var days = Math.floor(seconds / 86400);
-        var weeks = Math.floor(seconds / 604800);
-        var months = Math.floor(seconds / 2629440);
-        var years = Math.floor(seconds / 31553280);
+        let currentTime = Math.floor(Date.now() / 1000) // timestamp in seconds
+        let differenceTime = currentTime - Math.floor(date / 1000);
+        let seconds = differenceTime;
+        let minutes = Math.floor(seconds / 60);
+        let hours = Math.floor(seconds / 3600);
+        let days = Math.floor(seconds / 86400);
+        let weeks = Math.floor(seconds / 604800);
+        let months = Math.floor(seconds / 2629440);
+        let years = Math.floor(seconds / 31553280);
 
         if (seconds <= 60)
         {
@@ -471,7 +470,7 @@ something something preocupied with whether they could
     {
         return new Promise(function (resolve, reject)
         {
-            var listener = event =>
+            let listener = event =>
             {
                 element.removeEventListener(listenerName, listener);
                 resolve(event);
@@ -481,73 +480,66 @@ something something preocupied with whether they could
     }
 
     // some global variables :)
-    var loadedMessages = [] // groups messages into albums
-    var allMessages = [] // does not group messages into albums
-    var channels = {}
-    var user = undefined; // current user
-    var timelineChannel = undefined // your timeline channel
+    let loadedMessages = [] // groups messages into albums
+    let allMessages = [] // does not group messages into albums
+    let channels = {}
+    let user = undefined; // current user
+    let timelineChannel = undefined // your timeline channel
 
-    var status_waitPhoneNumber = "waitPhoneNumber" // wating for phone number
-    var status_waitCode = "waitCode" // waiting for code auth
-    var status_home = "home" // home, viewing your feed of all messages
-    var status_channel = "channel" // viewing a single channel/user
-    var status_thread = "thread" // viewing a single message
-    var current_status = status_waitPhoneNumber
+    let status_waitPhoneNumber = "waitPhoneNumber" // wating for phone number
+    let status_waitCode = "waitCode" // waiting for code auth
+    let status_home = "home" // home, viewing your feed of all messages
+    let status_channel = "channel" // viewing a single channel/user
+    let status_thread = "thread" // viewing a single message
+    let current_status = status_waitPhoneNumber
 
-    const urlParams = new URLSearchParams(window.location.search);
-    var channel_name_or_id = urlParams.get("channel");
-    var channel_message_id = urlParams.get("message");
+    let urlParams = new URLSearchParams(window.location.search);
+    let channel_name_or_id = urlParams.get("channel");
+    let channel_message_id = urlParams.get("message");
 
-    //addEventListener("navigate", (event) => { reset() });
     addEventListener("popstate", (event) => { Startup() });
     onpopstate = (event) => { Startup() };
 
-    // nukes all loaded messages
-    //async function reset()
-    //{
-    //}
-
-
     // get html elements
-    var DOMlogState = document.getElementById("state");
-    var DOMlogStateAuth = document.getElementById("auth_state");
-    var DOMlogUserID = document.getElementById("user_id");
+    let DOMlogState = document.getElementById("state");
+    let DOMlogStateAuth = document.getElementById("auth_state");
+    let DOMlogUserID = document.getElementById("user_id");
 
-    var DOMphoneVerify = document.getElementById("phoneVerify");
-    var DOMphoneVerifyError = document.getElementById("phoneVerifyError");
-    var DOMphoneButton = document.getElementById("phoneButton");
-    var DOMphoneNumber = document.getElementById("phoneNumber");
+    let DOMphoneVerify = document.getElementById("phoneVerify");
+    let DOMphoneVerifyError = document.getElementById("phoneVerifyError");
+    let DOMphoneButton = document.getElementById("phoneButton");
+    let DOMphoneNumber = document.getElementById("phoneNumber");
     DOMphoneVerify.hidden = true;
 
-    var DOMcodeVerify = document.getElementById("codeVerify");
-    var DOMcodeVerifyError = document.getElementById("codeVerifyError");
-    var DOMcodeButton = document.getElementById("codeButton");
-    var DOMcodeNumber = document.getElementById("codeNumber");
+    let DOMcodeVerify = document.getElementById("codeVerify");
+    let DOMcodeVerifyError = document.getElementById("codeVerifyError");
+    let DOMcodeButton = document.getElementById("codeButton");
+    let DOMcodeNumber = document.getElementById("codeNumber");
     DOMcodeVerify.hidden = true;
     
-    var DOMpasswordVerify = document.getElementById("passwordVerify");
-    var DOMpasswordVerifyError = document.getElementById("passwordVerifyError");
-    var DOMpasswordButton = document.getElementById("passwordButton");
-    var DOMpasswordNumber = document.getElementById("passwordNumber");
+    let DOMpasswordVerify = document.getElementById("passwordVerify");
+    let DOMpasswordVerifyError = document.getElementById("passwordVerifyError");
+    let DOMpasswordButton = document.getElementById("passwordButton");
+    let DOMpasswordNumber = document.getElementById("passwordNumber");
     DOMpasswordVerify.hidden = true;
 
-    var DOMmainView = document.getElementById("mainView");
-    var DOMtestButton = document.getElementById("testButton");
-    var DOMchannelList = document.getElementById("channelList");
+    let DOMmainView = document.getElementById("mainView");
+    let DOMtestButton = document.getElementById("testButton");
+    let DOMchannelList = document.getElementById("channelList");
 
-    var DOMmessageInput = document.getElementById("messageInput");
-    var DOMmessageSendButton = document.getElementById("messageSendButton");
-    var DOMmessageTextbox = document.getElementById("messageTextbox");
+    let DOMmessageInput = document.getElementById("messageInput");
+    let DOMmessageSendButton = document.getElementById("messageSendButton");
+    let DOMmessageTextbox = document.getElementById("messageTextbox");
 
-    var DOMreplyInput = document.getElementById("replyInput");
-    var DOMreplySendButton = document.getElementById("replySendButton");
-    var DOMreplyTextbox = document.getElementById("replyTextbox");
+    let DOMreplyInput = document.getElementById("replyInput");
+    let DOMreplySendButton = document.getElementById("replySendButton");
+    let DOMreplyTextbox = document.getElementById("replyTextbox");
 
-    var DOMhome = document.getElementById("Home");
-    var DOMchannel = document.getElementById("Channel");
-    var DOMthread = document.getElementById("Thread");
+    let DOMhome = document.getElementById("Home");
+    let DOMchannel = document.getElementById("Channel");
+    let DOMthread = document.getElementById("Thread");
 
-    var DOMloader = document.getElementById("loader");
+    let DOMloader = document.getElementById("loader");
 
     DOMmainView.hidden = true;
 
@@ -575,9 +567,9 @@ something something preocupied with whether they could
         }
     });
 
-    var global_chat_id = 0;
-    var global_reply_id = 0;
-    var global_message_thread_id = 0;
+    let global_chat_id = 0;
+    let global_reply_id = 0;
+    let global_message_thread_id = 0;
     DOMreplySendButton.addEventListener("click", function ()
     {
         if (DOMreplyTextbox.value == "")
@@ -607,7 +599,7 @@ something something preocupied with whether they could
     async function sendMessage(contents, chat_id, reply_to_message_id = 0, message_thread_id = 0)
     {
         // Send a text message to the channel
-        const result = await client.send({
+        let result = await client.send({
             "@type": "sendMessage",
             chat_id: chat_id,
             reply_to_message_id: reply_to_message_id,
@@ -629,7 +621,7 @@ something something preocupied with whether they could
     }
 
 
-    var scrollChecker = setInterval(function ()
+    let scrollChecker = setInterval(function ()
     {
         scroll = document.body.offsetHeight - (window.innerHeight + Math.ceil(window.pageYOffset));
         if (scroll < 500)
@@ -640,6 +632,22 @@ something something preocupied with whether they could
 
     async function setProfilePicEventually(img, photo)
     {
+
+        if (!photo)
+        {
+            img.src = "missing-picture.png"
+            return;
+        }
+    
+        // 1. immedietly set it to the mini pic
+        img.src = "data:image/jpeg;base64," + photo.minithumbnail.data;
+    
+        // 2. slowly download the full pic and set it.
+        img.src = await loadImage(photo.small);
+    }
+
+    async function setPictureEventually(img, small, minithumbnail)
+    {
         if (!photo)
         {
             img.src = "missing-picture.png"
@@ -647,18 +655,18 @@ something something preocupied with whether they could
         }
 
         // 1. immedietly set it to the mini pic
-        img.src = "data:image/jpeg;base64," + photo.minithumbnail.data;
+        img.src = "data:image/jpeg;base64," + minithumbnail.data;
 
         // 2. slowly download the full pic and set it.
-        img.src = await loadImage(photo.small);
+        img.src = await loadImage(small);
     }
 
     // Creates a message and appends it to the DOM
     async function createMessage(id, chat, message, use_hiding = true, bIsComment = false)
     {
         // Create and append the message tag to the DOM immedietly
-        var firstChildThatIsOlderThanNewMessage = undefined
-        for (const child of DOMchannelList.children)
+        let firstChildThatIsOlderThanNewMessage = undefined
+        for (let child of DOMchannelList.children)
         {
             if (date > child.getAttribute("timestamp"))
             {
@@ -666,7 +674,7 @@ something something preocupied with whether they could
                 break;
             }
         }
-        var DOMmessage = document.createElement("message");
+        let DOMmessage = document.createElement("message");
 
        
         if (!bIsComment)
@@ -677,29 +685,29 @@ something something preocupied with whether they could
             DOMchannelList.appendChild(DOMmessage);
         }
 
-        var date = message.date;
+        let date = message.date;
 
-        var forwardcount = 0
-        var viewcount = 0
+        let forwardcount = 0
+        let viewcount = 0
         if (message.interaction_info)
         {
             message.interaction_info.forward_count;
             message.interaction_info.view_count;
         }
 
-        var bCommentsEnabled = channels[chat.id].supergroup.has_linked_chat;
+        let bCommentsEnabled = channels[chat.id].supergroup.has_linked_chat;
 
-        var retweet_message = undefined
-        var title = undefined;
-        var profile_pic = undefined;
-        var username = undefined;
+        let retweet_message = undefined
+        let title = undefined;
+        let profile_pic = undefined;
+        let username = undefined;
 
         if (message.forward_info) // if it was forwarded
         {
             // forwarded from a user
             if (message.forward_info.origin["@type"] == "messageForwardOriginUser")
             {
-                var user = await client.send({
+                let user = await client.send({
                     "@type": "getUser",
                     "user_id": message.forward_info.origin.sender_user_id,
                 });
@@ -708,7 +716,7 @@ something something preocupied with whether they could
             }
             else if (message.forward_info.origin["@type"] == "messageForwardOriginChannel")
             {
-                var channel = channels[message.forward_info.origin.chat_id];
+                let channel = channels[message.forward_info.origin.chat_id];
                 if (channel)
                 {
                     profile_pic = channel.chat.photo;
@@ -727,7 +735,7 @@ something something preocupied with whether they could
             {
                 if (message.sender_id["@type"] == "messageSenderUser")
                 {
-                    var user = await client.send({
+                    let user = await client.send({
                         "@type": "getUser",
                         "user_id": message.sender_id.user_id,
                     });
@@ -741,7 +749,7 @@ something something preocupied with whether they could
                 {
                     profile_pic = chat.photo;
                     title = chat.title
-                    const channelSupergroup = await client.send({
+                    let channelSupergroup = await client.send({
                         '@type': 'getSupergroup',
                         supergroup_id: chat.type.supergroup_id,
                     });
@@ -795,17 +803,17 @@ something something preocupied with whether they could
             loadedMessages[id].DOMmessage.textContent = chat.title + " retweeted"
         }
 
-        var DOMprofile              = DOMmessage.appendChild(document.createElement("message-profile"));
-        var DOMprofileImg           = DOMprofile.appendChild(document.createElement("img"));
-        var DOMprofileUsername      = DOMprofile.appendChild(document.createElement("span"));
+        let DOMprofile              = DOMmessage.appendChild(document.createElement("message-profile"));
+        let DOMprofileImg           = DOMprofile.appendChild(document.createElement("img"));
+        let DOMprofileUsername      = DOMprofile.appendChild(document.createElement("span"));
         loadedMessages[id].DOMprofile           = DOMprofile;
         loadedMessages[id].DOMprofileImg        = DOMprofileImg;
         loadedMessages[id].DOMprofileUsername   = DOMprofileUsername;
 
-        var DOMcontent       = DOMmessage.appendChild(document.createElement("message-content"));
-        var DOMcaption       = DOMcontent.appendChild(document.createElement("message-caption"));
-        var DOMimages        = DOMcontent.appendChild(document.createElement("message-images"));
-        var DOMinteractions  = DOMmessage.appendChild(document.createElement("message-interactions"));
+        let DOMcontent       = DOMmessage.appendChild(document.createElement("message-content"));
+        let DOMcaption       = DOMcontent.appendChild(document.createElement("message-caption"));
+        let DOMimages        = DOMcontent.appendChild(document.createElement("message-images"));
+        let DOMinteractions  = DOMmessage.appendChild(document.createElement("message-interactions"));
         loadedMessages[id].DOMcontent       = DOMcontent;
         loadedMessages[id].DOMcaption       = DOMcaption;
         loadedMessages[id].DOMimages        = DOMimages;
@@ -820,8 +828,8 @@ something something preocupied with whether they could
 
         DOMmessage.addEventListener("click", async function (event)
         {
-            var bHitMessage = false;
-            var bHitProfile = false;
+            let bHitMessage = false;
+            let bHitProfile = false;
             if (event.target == DOMmessage)
                 bHitMessage = true;
             if (event.target == DOMcontent)
@@ -840,7 +848,7 @@ something something preocupied with whether they could
             {
                 history.pushState({}, "Go to thread", "?channel=" + username + "&message=" + message.id)
                 //window.location.href = "?channel=" + username + "&message=" + message.id;
-                //const urlParams = new URLSearchParams(window.location.search);
+                //let urlParams = new URLSearchParams(window.location.search);
                 //channel_name_or_id = urlParams.get("channel");
                 //channel_message_id = urlParams.get("message");
                 Startup()
@@ -853,7 +861,7 @@ something something preocupied with whether they could
             }
         });
 
-        var messageThread = null;
+        let messageThread = null;
         try
         {
             messageThread = await client.send({
@@ -901,9 +909,9 @@ something something preocupied with whether they could
         {
             return async function ()
             {
-                var fwd = loadedMessages[inner_id].messages;
-                var msgs = [];
-                for (var i = 0; i < fwd.length; i++)
+                let fwd = loadedMessages[inner_id].messages;
+                let msgs = [];
+                for (let i = 0; i < fwd.length; i++)
                 {
                     msgs.push(fwd[i].id)
                 }
@@ -920,18 +928,19 @@ something something preocupied with whether they could
         loadedMessages[id].DOMlike.setAttribute("class", "like hovercircle");
         loadedMessages[id].DOMlike.appendChild(document.createElement("span")).textContent = 0;
 
-        var DOMviews = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        let DOMviews = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         DOMviews.setAttribute("class", "views hovercircle");
         DOMviews.appendChild(document.createElement("span")).textContent = viewcount;
 
-        var DOMshare = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        let DOMshare = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         DOMshare.setAttribute("class", "share hovercircle");
         DOMshare.appendChild(document.createElement("span")).textContent = ""
 
         loadedMessages[id].DOMtimestamp = DOMmessage.appendChild(document.createElement("message-timestamp"));
 
         // async function that sets the picture later when it feels like it. :)
-        setProfilePicEventually(loadedMessages[id].DOMprofileImg, profile_pic)
+        //setProfilePicEventually(loadedMessages[id].DOMprofileImg, profile_pic)
+        setProfilePicEventually(loadedMessages[id].DOMprofileImg, profile_pic);
 
         loadedMessages[id].DOMprofileUsername.textContent = title
         loadedMessages[id].DOMtimestamp.textContent = getNiceTime(new Date(date * 1000));
@@ -945,19 +954,19 @@ something something preocupied with whether they could
         if (current_status == status_thread) // If in this state, we should read comments instead.
             return;
 
-        //for (var j = 0; j < 5; j++)
+        //for (let j = 0; j < 5; j++)
         {
-            var smallest = undefined;
-            var smallestTimestamp = 0;
-            var smallestID = 0;
+            let smallest = undefined;
+            let smallestTimestamp = 0;
+            let smallestID = 0;
             // find the channel with the most recent message and load that one
-            for (var i = 0; i < Object.keys(channels).length; i++)
+            for (let i = 0; i < Object.keys(channels).length; i++)
             {
-                var channel = channels[Object.keys(channels)[i]];
+                let channel = channels[Object.keys(channels)[i]];
                 if (channel.exhausted)
                     continue;
 
-                var timestamp = channel.latestMessageTimestamp
+                let timestamp = channel.latestMessageTimestamp
                 if (timestamp > smallestTimestamp)
                 {
                     smallestTimestamp = timestamp
@@ -970,7 +979,7 @@ something something preocupied with whether they could
         }
     }
 
-    var imageCache = {};
+    let imageCache = {};
 
     async function loadImage(file)
     {
@@ -986,27 +995,27 @@ something something preocupied with whether they could
     {
         if (!imageCache.hasOwnProperty(file.id))
         {
-            const blob = await loadFileBlob(file, mime_type, setProgress)
+            let blob = await loadFileBlob(file, mime_type, setProgress)
             imageCache[file.id] = URL.createObjectURL(blob);
         }
         return imageCache[file.id];
 
-        //const blob = await loadFileBlob(file, mime_type, setProgress)
+        //let blob = await loadFileBlob(file, mime_type, setProgress)
         //return URL.createObjectURL(blob);
     }
     async function loadFileBlob(file, mime_type, setProgress)
     {
         // TODO: add support for streaming large video files.
 
-        const CHUNK_SIZE = 1024 * 64; // 64KB
+        let CHUNK_SIZE = 1024 * 64; // 64KB
 
         let offset = 0;
         let fileSize = file.size;
 
-        const chunks = [];
+        let chunks = [];
         while (true)
         {
-            var DLSize = Math.min(CHUNK_SIZE, fileSize - offset)
+            let DLSize = Math.min(CHUNK_SIZE, fileSize - offset)
 
             if (fileSize == 0) // unknown filesize, just start downloading it
                 DLSize = CHUNK_SIZE;
@@ -1016,7 +1025,7 @@ something something preocupied with whether they could
 
             if (!file.is_downloading_completed)
             {
-                var result = await client.send({
+                let result = await client.send({
                     '@type': 'downloadFile',
                     file_id: file.id,
                     priority: 1,
@@ -1027,14 +1036,14 @@ something something preocupied with whether they could
                 fileSize = result.size;
             }
 
-            const result2 = await client.send({
+            let result2 = await client.send({
                 '@type': 'readFilePart',
                 file_id: file.id,
                 offset: offset,
                 count: Math.min(CHUNK_SIZE, fileSize - offset),
             });
 
-            const fileData = result2.data;
+            let fileData = result2.data;
             chunks.push(fileData);
 
             if (setProgress)
@@ -1042,7 +1051,7 @@ something something preocupied with whether they could
 
             offset += CHUNK_SIZE;
         }
-        const blob = new Blob(chunks, { type: mime_type });
+        let blob = new Blob(chunks, { type: mime_type });
         if (setProgress)
             setProgress(fileSize, fileSize);
 
@@ -1056,23 +1065,23 @@ something something preocupied with whether they could
     }
     async function addImage(id, message, image)
     {
-        var images = loadedMessages[id].DOMimages;
+        let images = loadedMessages[id].DOMimages;
 
-        var img = document.createElement('img');
+        let img = document.createElement('img');
 
         images.prepend(img);
-
-        loadImage(image).then((src) =>
-        {
-            img.src = src;
-        })
+        console.log(image);
+        //loadImage(image).then((src) =>
+        //{
+        //    img.src = src;
+        //})
         return img;
     }
     async function addVideo(id, message, video, thumbnail, controls)
     {
-        var thumbnailPath = await loadImage(thumbnail);
-        var DOMvideo = document.createElement('video');
-        var images = loadedMessages[id].DOMimages;
+        let thumbnailPath = await loadImage(thumbnail);
+        let DOMvideo = document.createElement('video');
+        let images = loadedMessages[id].DOMimages;
         images.prepend(DOMvideo);
 
         if (controls)
@@ -1087,8 +1096,8 @@ something something preocupied with whether they could
 
         DOMvideo.setAttribute("poster", thumbnailPath);
 
-        var progress = images.appendChild(document.createElement('progress'));
-        var videoUrl = await loadFile(video, "video/mp4", function (value, max)
+        let progress = images.appendChild(document.createElement('progress'));
+        let videoUrl = await loadFile(video, "video/mp4", function (value, max)
         {
             if (value == max) // done
             {
@@ -1098,7 +1107,7 @@ something something preocupied with whether they could
             progress.setAttribute("max", max)
         });
 
-        var source = document.createElement('source');
+        let source = document.createElement('source');
         source.setAttribute("src", videoUrl);
         DOMvideo.appendChild(source);
     }
@@ -1112,7 +1121,7 @@ something something preocupied with whether they could
         if (message.id in allMessages) // we got the same message twice. reject it!
             return false;
 
-        var contentType = message.content["@type"];
+        let contentType = message.content["@type"];
         if (contentType == "messageText")
             return true;
         else if (contentType == "messagePhoto")
@@ -1129,8 +1138,8 @@ something something preocupied with whether they could
     }
     function getSupportedMessageCount(result)
     {
-        var count = 0
-        for (const message of result.messages)
+        let count = 0
+        for (let message of result.messages)
         {
             if (isMessageSupported(message))
                 count++;
@@ -1144,14 +1153,14 @@ something something preocupied with whether they could
     {
         allMessages[message.id] = {};
 
-        var id = message.media_album_id;
+        let id = message.media_album_id;
         if (message.media_album_id == 0)
             id = message.id;
 
         channels[chat.id].latestMessage = message.id;
         channels[chat.id].latestMessageTimestamp = message.date;
 
-        var contentType = message.content["@type"];
+        let contentType = message.content["@type"];
         if (contentType == "messageText")
         {
             if (!(id in loadedMessages)) // new message
@@ -1165,7 +1174,7 @@ something something preocupied with whether they could
                 await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
-            await addImage(id, message, message.content.photo.sizes[0].photo);
+            await addImage(id, message, message.content.photo);//.sizes[0].photo
         }
         else if (contentType == "messageVideo")
         {
@@ -1189,7 +1198,7 @@ something something preocupied with whether they could
                 await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
-            await addImage(id, message, message.content.document.thumbnail.file);
+            await addImage(id, message, message.content.document);//.thumbnail.file
         }
         else if (contentType == "messageSticker")
         {
@@ -1197,7 +1206,7 @@ something something preocupied with whether they could
                 await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, "");
-            var img = await addImage(id, message, message.content.sticker.thumbnail.file);
+            let img = await addImage(id, message, message.content.sticker.thumbnail.file);
 
             // force stickers to be 256x256
             img.setAttribute("style", "width:256px")
@@ -1206,7 +1215,7 @@ something something preocupied with whether they could
 
     async function loadSingleMessage(chat, message_id)
     {
-        var message = await client.send({
+        let message = await client.send({
             '@type': 'getMessage',
             chat_id: chat.id,
             message_id: message_id,
@@ -1219,11 +1228,11 @@ something something preocupied with whether they could
 
     async function loadMessageFromChannel(chat)
     {
-        var startID = channels[chat.id].latestMessage
+        let startID = channels[chat.id].latestMessage
         
-        var messageCount = 1;
+        let messageCount = 1;
 
-        var result = await client.send({
+        let result = await client.send({
             '@type': 'getChatHistory',
             chat_id: chat.id,
             from_message_id: startID, // start from the latest message
@@ -1253,7 +1262,7 @@ something something preocupied with whether they could
                 }
                 channels[chat.id].zeroCount++;
             }
-            for (const message of result.messages)
+            for (let message of result.messages)
             {
                 channels[chat.id].zeroCount = 0;
                 addMessage(message, chat);
@@ -1262,11 +1271,11 @@ something something preocupied with whether they could
     }
 
     // check 10 times per second (every 100ms)
-    var doneLoading = false;
-    var sameCount = 0;
-    var lastChannelCount;
-    var loadCount = 0;
-    var startupDelayChecker = setInterval(function ()
+    let doneLoading = false;
+    let sameCount = 0;
+    let lastChannelCount;
+    let loadCount = 0;
+    let startupDelayChecker = setInterval(function ()
     {
         if (current_status == status_channel || current_status == status_thread)
         {
@@ -1302,7 +1311,8 @@ something something preocupied with whether they could
     // Called once things are done loading.
     async function Startup()
     {
-        const urlParams = new URLSearchParams(window.location.search);
+        DOMloader.hidden = false;
+        let urlParams = new URLSearchParams(window.location.search);
         channel_name_or_id = urlParams.get("channel");
         channel_message_id = urlParams.get("message");
 
@@ -1330,9 +1340,9 @@ something something preocupied with whether they could
         DOMchannelList.innerHTML = ""; // nuke
         loadedMessages = []; // nuke
         allMessages = []; // nuke
-        for (var i = 0; i < Object.keys(channels).length; i++)
+        for (let i = 0; i < Object.keys(channels).length; i++)
         {
-            var channel = channels[Object.keys(channels)[i]];
+            let channel = channels[Object.keys(channels)[i]];
             channel.latestDOMmessage = null;
             channel.latestMessage = null;
             channel.latestMessageTimestamp = null;
@@ -1341,9 +1351,9 @@ something something preocupied with whether they could
 
         if (current_status == status_home)
         {
-            for (var i = 0; i < Object.keys(channels).length; i++)
+            for (let i = 0; i < Object.keys(channels).length; i++)
             {
-                var channel = channels[Object.keys(channels)[i]];
+                let channel = channels[Object.keys(channels)[i]];
                 if (channel.bIsDiscussion)
                     continue;
 
@@ -1366,7 +1376,7 @@ something something preocupied with whether they could
         // If we want a single channel, but it was not found, search for it.
         if (current_status == status_channel || current_status == status_thread)
         {
-            var chat = undefined
+            let chat = undefined
             try
             {
                 console.log(`Trying to load channel ${channel_name_or_id} as chat ID`);
@@ -1393,12 +1403,12 @@ something something preocupied with whether they could
 
             if (chat)
             {
-                const supergroup = await client.send({
+                let supergroup = await client.send({
                     '@type': 'getSupergroup',
                     supergroup_id: chat.type.supergroup_id,
                 });
 
-                const supergroupInfo = await client.send({
+                let supergroupInfo = await client.send({
                     "@type": "getSupergroupFullInfo",
                     supergroup_id: supergroup.id,
                 });
@@ -1413,14 +1423,14 @@ something something preocupied with whether they could
                 if (current_status == status_thread)
                 {
                     // load the first message
-                    var message = await client.send({
+                    let message = await client.send({
                         '@type': 'getMessage',
                         chat_id: chat.id,
                         message_id: channel_message_id,
                     });
 
                     // load comments
-                    const result = null;
+                    let result = null;
                     try
                     {
                         result = await client.send({
@@ -1442,14 +1452,14 @@ something something preocupied with whether they could
                         // If a thread was found, to be able to reply to the main message
                         // we need to use the main message from the *thread*, not from the *channel*.
                         // we find the *thread* message by asking the first reply what it was replying to.
-                        var discussionChat = await client.send({
+                        let discussionChat = await client.send({
                             '@type': 'getChat',
                             chat_id: result.messages[0].reply_in_chat_id,
                         });
                         console.log(discussionChat);
-                        var message = await loadSingleMessage(discussionChat, result.messages[0].reply_to_message_id)
+                        let message = await loadSingleMessage(discussionChat, result.messages[0].reply_to_message_id)
 
-                        for (const message of result.messages)
+                        for (let message of result.messages)
                         {
                             addMessage(message, chat, false, true);
                         }
@@ -1457,7 +1467,7 @@ something something preocupied with whether they could
                     else
                     {
                         // if thread was empty, just load the one message directly.
-                        var message = await loadSingleMessage(chat, channel_message_id)
+                        let message = await loadSingleMessage(chat, channel_message_id)
                     }
 
                 }
@@ -1486,7 +1496,7 @@ something something preocupied with whether they could
             return;
 
         // 1. Create the channel
-        const chat = await client.send({
+        let chat = await client.send({
             "@type": "createNewSupergroupChat",
             title: user.username + "'s Telegram Timeline",
             is_channel: true,
@@ -1495,7 +1505,7 @@ something something preocupied with whether they could
 
 
         // 2. Enable replies by adding a "discussion group".
-        const discssionGroup = await client.send({
+        let discssionGroup = await client.send({
             "@type": "createNewSupergroupChat",
             title: "Teletime - Discussion Group.",
             is_channel: false,
@@ -1509,9 +1519,9 @@ something something preocupied with whether they could
 
 
         // 3. Update the profile picture
-        //const uniqueRemoteImageUrl = `$http://212.100.102.124:8000/Coal.png?${Date.now()}`;
+        //let uniqueRemoteImageUrl = `$http://212.100.102.124:8000/Coal.png?${Date.now()}`;
         //console.log(uniqueRemoteImageUrl);
-        //var setphotoresult = await client.send({
+        //let setphotoresult = await client.send({
         //    "@type": "setChatPhoto",
         //    chat_id: chatId,
         //    photo: {
@@ -1536,9 +1546,9 @@ something something preocupied with whether they could
         //});
 
         // 4. Make it public.
-        var public_username = user.username + "_Timeline";
+        let public_username = user.username + "_Timeline";
         
-        const isUsernameAvailable = await client.send({
+        let isUsernameAvailable = await client.send({
             "@type": "checkChatUsername",
             chat_id: chat.id,
             username: public_username,
@@ -1563,7 +1573,7 @@ something something preocupied with whether they could
 
     async function getChats()
     {
-        const result = await client.send({
+        let result = await client.send({
             '@type': 'getChats',
             chat_list: {
                 '@type': 'chatListMain',
@@ -1582,12 +1592,12 @@ something something preocupied with whether they could
 
     async function update(data)
     {
-        var type = data["@type"];
+        let type = data["@type"];
         DOMlogState.textContent = "state: " + type;
 
         if (type == "updateAuthorizationState")
         {
-            var state = data.authorization_state["@type"];
+            let state = data.authorization_state["@type"];
             DOMlogStateAuth.textContent = "auth_state: " + state;
 
             if (state == "authorizationStateWaitTdlibParameters")
@@ -1633,7 +1643,7 @@ something something preocupied with whether they could
                 {
                     await waitListener(DOMphoneButton, "click");
 
-                    var result = undefined;
+                    let result = undefined;
                     try
                     {
                         result = await client.send({
@@ -1670,7 +1680,7 @@ something something preocupied with whether they could
                 while (true)
                 {
                     await waitListener(DOMcodeButton, "click");
-                    var result = undefined;
+                    let result = undefined;
                     try
                     {
                         result = await client.send({
@@ -1701,7 +1711,7 @@ something something preocupied with whether they could
                 {
                     await waitListener(DOMpasswordButton, "click");
 
-                    var result = undefined;
+                    let result = undefined;
                     try
                     {
                         result = await client.send({
@@ -1749,12 +1759,12 @@ something something preocupied with whether they could
                 //if (data.chat.title.includes("Poss"))
                 //    return;
 
-                const supergroup = await client.send({
+                let supergroup = await client.send({
                     '@type': 'getSupergroup',
                     supergroup_id: data.chat.type.supergroup_id,
                 });
 
-                const supergroupInfo = await client.send({
+                let supergroupInfo = await client.send({
                     "@type": "getSupergroupFullInfo",
                     supergroup_id: supergroup.id,
                 });
@@ -1777,15 +1787,15 @@ something something preocupied with whether they could
 
                     if (supergroup.has_linked_chat)
                     {
-                        var discussionChat = await client.send({
+                        let discussionChat = await client.send({
                             '@type': 'getChat',
                             chat_id: supergroupInfo.linked_chat_id,
                         });
-                        const discussionSupergroup = await client.send({
+                        let discussionSupergroup = await client.send({
                             '@type': 'getSupergroup',
                             supergroup_id: discussionChat.type.supergroup_id,
                         });
-                        const discussionSupergroupInfo = await client.send({
+                        let discussionSupergroupInfo = await client.send({
                             "@type": "getSupergroupFullInfo",
                             supergroup_id: discussionSupergroup.id,
                         });
@@ -1816,7 +1826,7 @@ something something preocupied with whether they could
         }
     }
 
-    var bAuthDone = false;
+    let bAuthDone = false;
     // Called when auth is completed.
     function authorizationDone()
     {
@@ -1834,5 +1844,5 @@ something something preocupied with whether they could
         onUpdate: update
     };
 
-    var client = new tdweb.default(options)
+    let client = new tdweb.default(options)
 </script>
