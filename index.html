@@ -494,21 +494,18 @@ something something preocupied with whether they could
     var status_thread = "thread" // viewing a single message
     var current_status = status_waitPhoneNumber
 
-
     const urlParams = new URLSearchParams(window.location.search);
     var channel_name_or_id = urlParams.get("channel");
     var channel_message_id = urlParams.get("message");
 
+    //addEventListener("navigate", (event) => { reset() });
+    addEventListener("popstate", (event) => { Startup() });
+    onpopstate = (event) => { Startup() };
 
     // nukes all loaded messages
-    async function reset()
-    {
-        DOMchannelList.innerHTML = "";
-        loadedMessages = [];
-        allMessages = [];
-        //window.location.href = "?&channel=magpistreams";
-        //window.location.href = "?&private_channel_id=343245532";
-    }
+    //async function reset()
+    //{
+    //}
 
 
     // get html elements
@@ -812,7 +809,14 @@ something something preocupied with whether they could
         loadedMessages[id].DOMcontent       = DOMcontent;
         loadedMessages[id].DOMcaption       = DOMcaption;
         loadedMessages[id].DOMimages        = DOMimages;
-        loadedMessages[id].DOMinteractions  = DOMinteractions;
+        loadedMessages[id].DOMinteractions = DOMinteractions;
+        loadedMessages[id].DOMreply = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        loadedMessages[id].DOMreplyText = loadedMessages[id].DOMreply.appendChild(document.createElement("span"))
+        loadedMessages[id].DOMreplyText.textContent = 0;
+
+        loadedMessages[id].DOMretweet = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+        loadedMessages[id].DOMretweet.setAttribute("class", "retweet hovercircle");
+        loadedMessages[id].DOMretweet.appendChild(document.createElement("span")).textContent = forwardcount;
 
         DOMmessage.addEventListener("click", async function (event)
         {
@@ -834,11 +838,18 @@ something something preocupied with whether they could
 
             if (bHitMessage) // go to message / comments
             {
-                window.location.href = "?channel=" + username + "&message=" + message.id;
+                history.pushState({}, "Go to thread", "?channel=" + username + "&message=" + message.id)
+                //window.location.href = "?channel=" + username + "&message=" + message.id;
+                //const urlParams = new URLSearchParams(window.location.search);
+                //channel_name_or_id = urlParams.get("channel");
+                //channel_message_id = urlParams.get("message");
+                Startup()
             }
             else if (bHitProfile) // go to profile
             {
-                window.location.href = "?channel="+username;
+                history.pushState({}, "Go to channel or user", "?channel=" + username)
+                //window.location.href = "?channel="+username;
+                Startup()
             }
         });
 
@@ -855,8 +866,7 @@ something something preocupied with whether they could
         {
             console.log(err)
         }
-        console.log(messageThread);
-        loadedMessages[id].DOMreply = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
+
         if (bCommentsEnabled)
         {
             loadedMessages[id].DOMreply.setAttribute("class", "reply hovercircle");
@@ -887,13 +897,6 @@ something something preocupied with whether they could
         {
             loadedMessages[id].DOMreply.setAttribute("class", "reply disabled");
         }
-        loadedMessages[id].DOMreplyText = loadedMessages[id].DOMreply.appendChild(document.createElement("span"))
-        loadedMessages[id].DOMreplyText.textContent = 0;
-
-        loadedMessages[id].DOMretweet = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
-        loadedMessages[id].DOMretweet.setAttribute("class", "retweet hovercircle");
-        loadedMessages[id].DOMretweet.appendChild(document.createElement("span")).textContent = forwardcount;
-        
         loadedMessages[id].DOMretweet.addEventListener("click", function (inner_id, inner_chatId)
         {
             return async function ()
@@ -1299,7 +1302,66 @@ something something preocupied with whether they could
     // Called once things are done loading.
     async function Startup()
     {
+        const urlParams = new URLSearchParams(window.location.search);
+        channel_name_or_id = urlParams.get("channel");
+        channel_message_id = urlParams.get("message");
+
         DOMmainView.hidden = false;
+        DOMhome.hidden = true;
+        DOMchannel.hidden = true;
+        DOMthread.hidden = true;
+
+        current_status = status_home;
+        if (channel_name_or_id)
+        {
+            current_status = status_channel
+
+            if (channel_message_id)
+                current_status = status_thread
+        }
+        if (current_status == status_home)
+            DOMhome.hidden = false;
+        if (current_status == status_channel)
+            DOMchannel.hidden = false;
+        if (current_status == status_thread)
+            DOMthread.hidden = false;
+
+        document.body.appendChild(DOMreplyInput); // move out to safety
+        DOMchannelList.innerHTML = ""; // nuke
+        loadedMessages = []; // nuke
+        allMessages = []; // nuke
+        for (var i = 0; i < Object.keys(channels).length; i++)
+        {
+            var channel = channels[Object.keys(channels)[i]];
+            channel.latestDOMmessage = null;
+            channel.latestMessage = null;
+            channel.latestMessageTimestamp = null;
+            channel.zeroCount = 0;
+        }
+
+        if (current_status == status_home)
+        {
+            for (var i = 0; i < Object.keys(channels).length; i++)
+            {
+                var channel = channels[Object.keys(channels)[i]];
+                if (channel.bIsDiscussion)
+                    continue;
+
+                // load one thing form every channel
+                loadMessageFromChannel(channel.chat);
+
+            }
+        }
+
+        //window.location.href = "?&channel=magpistreams";
+        //window.location.href = "?&private_channel_id=343245532";
+        //reset()
+
+        //if (current_status == status_home && !channels[data.chat.id].bIsDiscussion)
+        //{
+        //    // load one thing form every channel
+        //    loadMessageFromChannel(channels[data.chat.id].chat);
+        //}
 
         // If we want a single channel, but it was not found, search for it.
         if (current_status == status_channel || current_status == status_thread)
@@ -1358,18 +1420,24 @@ something something preocupied with whether they could
                     });
 
                     // load comments
-                    console.log("START getMessageThreadHistory");
-                    const result = await client.send({
-                        '@type': 'getMessageThreadHistory',
-                        chat_id: chat.id,
-                        message_id: message.id,
-                        from_message_id: 0,
-                        offset: 0,
-                        limit: 10,
-                    });
-                    console.log("END getMessageThreadHistory");
+                    const result = null;
+                    try
+                    {
+                        result = await client.send({
+                            '@type': 'getMessageThreadHistory',
+                            chat_id: chat.id,
+                            message_id: message.id,
+                            from_message_id: 0,
+                            offset: 0,
+                            limit: 10,
+                        });
+                    }
+                    catch (err)
+                    {
+                        console.log(err)
+                    }
 
-                    if (result.messages[0])
+                    if (result && result.messages[0])
                     {
                         // If a thread was found, to be able to reply to the main message
                         // we need to use the main message from the *thread*, not from the *channel*.
@@ -1678,8 +1746,8 @@ something something preocupied with whether they could
                 //if (data.chat.title != "Torvid Content")
                 //    return;
 
-                if (data.chat.title.includes("Poss"))
-                    return;
+                //if (data.chat.title.includes("Poss"))
+                //    return;
 
                 const supergroup = await client.send({
                     '@type': 'getSupergroup',
@@ -1690,7 +1758,6 @@ something something preocupied with whether they could
                     "@type": "getSupergroupFullInfo",
                     supergroup_id: supergroup.id,
                 });
-
 
                 loadCount++;
                 // If you are a member
@@ -1733,12 +1800,6 @@ something something preocupied with whether they could
                         channels[discussionChat.id].discussionChannel = channels[discussionChat.id];
                         channels[data.chat.id].discussionChannel = channels[discussionChat.id];
                     }
-
-                    if (current_status == status_home)
-                    {
-                        // load one thing form every channel
-                        loadMessageFromChannel(data.chat);
-                    }
                 }
 
                 if (supergroup.status["@type"] === 'chatMemberStatusCreator')
@@ -1759,24 +1820,6 @@ something something preocupied with whether they could
     // Called when auth is completed.
     function authorizationDone()
     {
-        DOMhome.hidden = true;
-        DOMchannel.hidden = true;
-        DOMthread.hidden = true;
-
-        current_status = status_home;
-        if (channel_name_or_id)
-        {
-            current_status = status_channel
-
-            if (channel_message_id)
-                current_status = status_thread
-        }
-        if (current_status == status_home)
-            DOMhome.hidden = false;
-        if (current_status == status_channel)
-            DOMchannel.hidden = false;
-        if (current_status == status_thread)
-            DOMthread.hidden = false;
     }
     let options =
     {
