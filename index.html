@@ -290,13 +290,23 @@ something something preocupied with whether they could
 
     #Channel {
     }
-        #Channel h1 {
+        #Channel #ChannelTitle {
             /* background-color:red; */
         }
         #Channel img {
             border-radius: 5em;
             width: 10em;
             height: 10em;
+        }
+        #Channel #ChannelLink {
+        }
+        #Channel #ChannelDescription {
+        }
+        #Channel #ChannelFollowing {
+        font-weight: bold;
+        }
+        #Channel #ChannelFollowers {
+        font-weight: bold;
         }
 
     #phoneVerifyError, #codeVerifyError, #passwordVerifyError {
@@ -400,6 +410,28 @@ something something preocupied with whether they could
         }
     }
 
+
+    a {
+        font-family: 'Atkinson Hyperlegible', sans-serif;
+        text-decoration: none;
+        color: #83CAFF;
+    }
+        a:link {
+
+        }
+
+        a:visited {
+
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        a:active {
+
+        }
+
 </style>
 
 <head>
@@ -426,7 +458,6 @@ something something preocupied with whether they could
             It takes all the Channels (not Groups or DMs) that you are a member of on Telegram, and puts them all into a singular feed for you, Just like twitter.<br /><br />
             Log-in to telegram below:<br />
         </p>
-        
         <div id="loginEnterData">
             <div id="phoneVerify">
                 <label for="phone">Enter phone number:</label><br />
@@ -473,13 +504,12 @@ something something preocupied with whether they could
         </div>
 
         <div id="Channel">
-            <!--<img src="Coal.png" />
-    <h2 id="ChannelTitle">Coals Telegram Timeline</h2>
-    <h3 id="ChannelLink"> channel link </h3>
-    <p id="ChannelDescription">channel description</p>
-    <label id="ChannelFollowing">106</label>  following
-    <label id="ChannelFollowers">1634</label>  followers
-    <hr />-->
+            <img id="ChannelImage" src="Coal.png" />
+            <h2 id="ChannelTitle">Coals Telegram Timeline</h2>
+            <a id="ChannelLink"> t.me/Coal</a>
+            <p id="ChannelDescription">channel description</p>
+            <label id="ChannelFollowers">1634</label> followers    
+            <label id="ChannelFollowing">106</label> following    
         </div>
 
         <div id="Thread">
@@ -603,14 +633,14 @@ something something preocupied with whether they could
 
     async function sendCancelable(argument)
     {
-        return await sendGlobal(argument);
-        //let abortSignal = abortController.createSignal();
-        //let thing = await sendGlobal(argument);
-        //if (abortSignal.aborted)
-        //{
-        //    return;
-        //}
-        //return thing;
+        let abortSignal = abortController.createSignal();
+
+        let thing = await sendGlobal(argument);
+
+        if (abortSignal.aborted) // use exeptions to eject out and not complete the call.
+            throw "Async call aborted!"
+
+        return thing;
     }
     async function sendGlobal(argument)
     {
@@ -677,9 +707,19 @@ something something preocupied with whether they could
     let DOMreplySendButton = document.getElementById("replySendButton");
     let DOMreplyTextbox = document.getElementById("replyTextbox");
 
+
     let DOMhome = document.getElementById("Home");
+
     let DOMchannel = document.getElementById("Channel");
+    let DOMchannelImage = document.getElementById("ChannelImage");
+    let DOMchannelTitle = document.getElementById("ChannelTitle");
+    let DOMchannelLink = document.getElementById("ChannelLink");
+    let DOMchannelDescription = document.getElementById("ChannelDescription");
+    let DOMchannelFollowing = document.getElementById("ChannelFollowing");
+    let DOMchannelFollowers = document.getElementById("ChannelFollowers");
+
     let DOMthread = document.getElementById("Thread");
+
 
     let DOMloader = document.getElementById("loader");
 
@@ -1061,9 +1101,24 @@ something something preocupied with whether they could
         DOMviews.setAttribute("class", "views hovercircle");
         DOMviews.appendChild(document.createElement("span")).textContent = viewcount;
 
+        console.log(message)
         let DOMshare = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         DOMshare.setAttribute("class", "share hovercircle");
         DOMshare.appendChild(document.createElement("span")).textContent = ""
+        DOMshare.addEventListener("click", function (inner_id, inner_chatId)
+        {
+            return async function ()
+            {
+                let result = await sendCancelable({
+                    '@type': 'getMessageLink',
+                    chat_id: inner_chatId,
+                    message_id: inner_id,
+                });
+                console.log(result);
+                window.open(result.link);
+            }
+            
+        }(message.id, chat.id));
 
         loadedMessages[id].DOMtimestamp = DOMmessage.appendChild(document.createElement("message-timestamp"));
 
@@ -1087,7 +1142,6 @@ something something preocupied with whether they could
         {
             let smallest = undefined;
             let smallestTimestamp = 0;
-            let smallestID = 0;
             // find the channel with the most recent message and load that one
             for (let i = 0; i < Object.keys(channels).length; i++)
             {
@@ -1100,9 +1154,9 @@ something something preocupied with whether they could
                 {
                     smallestTimestamp = timestamp
                     smallest = channel;
-                    smallestID = Object.keys(channels)[i];
                 }
             }
+
             if (smallest)
                 loadMessageFromChannel(smallest.chat)
         }
@@ -1206,7 +1260,7 @@ something something preocupied with whether they could
         else // document
         {
             img.src = "data:image/jpeg;base64," + image.minithumbnail.data;
-            loadImage(image.thumbnail).then((src) =>
+            loadImage(image.thumbnail.file).then((src) =>
             {
                 img.src = src;
             })
@@ -1227,7 +1281,7 @@ something something preocupied with whether they could
             DOMvideo.setAttribute("autoplay", "");
             DOMvideo.setAttribute("loop", "");
         }
-        console.log(thumbnail);
+
         DOMvideo.setAttribute("poster", "data:image/jpeg;base64," + thumbnail.minithumbnail.data);
         if (thumbnail["@type"] == "video")
         {
@@ -1568,28 +1622,67 @@ something something preocupied with whether they could
                 // load one thing form every channel
                 if (current_status == status_thread)
                 {
+                    // load messages until the 
                     // load the first message
                     let message = await sendCancelable({
                         '@type': 'getMessage',
                         chat_id: chat.id,
                         message_id: channel_message_id,
                     });
+                    let resultMessage = message;
+
+                    // It's an album, albums can contain max 10 items.
+                    // So we load 10 messages and loop through them to find the one that contains the data we want.
+                    if (message.media_album_id)
+                    {
+                        // TODO: stats liek viewcount on this
+                        // TODO: grabbing 10 messages like this to load a gallery is
+                        //       a much nicer solution than folding them in one by one.
+                        let albumID = message.media_album_id;
+                        let result = await sendCancelable({
+                            '@type': 'getChatHistory',
+                            chat_id: chat.id,
+                            from_message_id: 0,
+                            offset: 0,
+                            limit: 10,
+                        });
+                        result = await sendCancelable({
+                            '@type': 'getChatHistory',
+                            chat_id: chat.id,
+                            from_message_id: 0,
+                            offset: 0,
+                            limit: 10,
+                        });
+                        console.log(result);
+                        for (let message of result.messages)
+                        {
+                            if (message.media_album_id == albumID)
+                                resultMessage = message
+                            else
+                                break;
+                        }
+                    }
 
                     // load comments
                     let result = null;
                     try
                     {
+                        console.log("get START");
+                        console.log(channels[chat.id]);
+                        console.log(resultMessage);
                         result = await sendCancelable({
                             '@type': 'getMessageThreadHistory',
                             chat_id: chat.id,
-                            message_id: message.id,
+                            message_id: resultMessage.id,
                             from_message_id: 0,
                             offset: 0,
                             limit: 10,
                         });
+                        console.log("get DONE");
                     }
                     catch (err)
                     {
+                        console.log("get ERROR");
                         console.log(err)
                     }
 
@@ -1602,7 +1695,7 @@ something something preocupied with whether they could
                             '@type': 'getChat',
                             chat_id: result.messages[0].reply_in_chat_id,
                         });
-                        console.log(discussionChat);
+
                         let message = await loadSingleMessage(discussionChat, result.messages[0].reply_to_message_id)
 
                         for (let message of result.messages)
@@ -1619,6 +1712,15 @@ something something preocupied with whether they could
                 }
                 else
                 {
+                    let channel = channels[chat.id]
+                    DOMchannelDescription.innerText = channel.supergroupInfo.description;
+                    DOMchannelTitle.innerText = channel.chat.title;
+                    DOMchannelLink.innerText = "t.me/" + channel.supergroup.username
+                    DOMchannelLink.setAttribute("href", "https://t.me/" + channel.supergroup.username);
+                    DOMchannelFollowers.innerText = channel.supergroup.member_count;
+                    DOMchannelFollowing.innerText = "-";
+                    setProfilePicEventually(DOMchannelImage, channel.chat.photo)
+
                     loadMessageFromChannel(chat);
                 }
             }
