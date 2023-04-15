@@ -4,32 +4,6 @@
     // Written by Torivd and ChatGPT.
     // I'm not a web developer by trade. Hopefully I didn't fuck up any security stuff. :)
 
-    // TODO:
-    // Add tooltips to everything
-
-    // "share" button that works
-
-    // Add meta-tags with some nice marketing images
-
-    // Arbitrary file download?
-    // Download button for files
-
-    // TODO: add DMs in the bottom right
-
-    // TODO: add a list of everyone you currently follow
-    //  Maybe have it ask your interests? (memes, furry, cars, food/cooking, etc)
-
-    // TODO: make it so posts are cleverly filtered such that channels that spam a lot show up less
-
-    // TODO: add support for commenting inline, comment threading
-
-    // TODO: support for likes
-
-    // TODO: loading replies as sub-threads
-
-    // TODO: make it load the minithumbnail at the right size immedietly
-
-    // TODO: Lightbox forimages
 </script>
 
 <!--
@@ -262,7 +236,9 @@ something something preocupied with whether they could
     .disabled {
         filter: sepia(100%) saturate(0%) brightness(50%);
     }
-
+    pre {
+        font-family: 'Atkinson Hyperlegible', sans-serif;
+    }
     #creatingTelegramTimelineBackground {
         position: absolute;
         top: 0;
@@ -271,12 +247,36 @@ something something preocupied with whether they could
         width: 100%;
         height: 100%;
     }
+
+
     #creatingTelegramTimeline {
         position: fixed;
         top: 50%;
         left: 50%;
         max-width: 30em;
         transform: translate(-50%, -50%);
+    }
+
+
+    .infoModalBackground {
+        position: absolute;
+        top: 0;
+        background-color: #00000080;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .infoModalContent {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 75%;
+        transform: translate(-50%, -50%);
+        white-space: break-spaces;
+        background-color: #0e1621;
+        border-radius: 1em;
+        padding-left: 4em;
+        padding-right: 4em;
     }
     #login {
         /* background-color:
@@ -382,6 +382,14 @@ something something preocupied with whether they could
         border-radius: 0.5em;
     }
 
+    input[type=button] {
+        width: 8em;
+        height: 3em;
+        background-color: #355779;
+        color: white;
+        border-width: 0;
+        border-radius: 0.5em;
+    }
     /*taken from w3schools*/
     .loader {
         border: 8px solid #182533;
@@ -440,6 +448,7 @@ something something preocupied with whether they could
 
 <body>
     <a href="#"><h1>Telegram Timeline</h1></a>
+    <input type="button" value="Technical Info" onclick="document.getElementById('about_modal').removeAttribute('hidden')">
     <hr />
 
     <div id="status" hidden>
@@ -451,7 +460,7 @@ something something preocupied with whether they could
     <div id="login">
         <h1>What?</h1>
         <p>
-            This is Telegram Timeline.<br /><br />
+            This is a Telegram Timeline MVP.<br /><br />
             It takes all the Channels (not Groups or DMs) that you are a member of on Telegram, and puts them all into a singular feed for you, Just like twitter.<br /><br />
             Log-in to telegram below:<br />
         </p>
@@ -501,12 +510,12 @@ something something preocupied with whether they could
         </div>
 
         <div id="Channel">
-            <img id="ChannelImage" src="Coal.png" />
-            <h2 id="ChannelTitle">Coals Telegram Timeline</h2>
-            <a id="ChannelLink"> t.me/Coal</a>
-            <p id="ChannelDescription">channel description</p>
-            <label id="ChannelFollowers">1634</label> followers    
-            <label id="ChannelFollowing">106</label> following    
+            <img id="ChannelImage" src="missing-picture.png" />
+            <h2 id="ChannelTitle"></h2>
+            <a id="ChannelLink"></a>
+            <p id="ChannelDescription"></p>
+            <label id="ChannelFollowers">-</label> followers
+            <label id="ChannelFollowing">-</label> following
         </div>
 
         <div id="Thread">
@@ -529,6 +538,40 @@ something something preocupied with whether they could
         </div>
     </div>
 
+
+    <div id="about_modal" class="infoModalBackground" hidden>
+        <div class="infoModalContent">
+            <h1>About Teletime</h1>
+<input type="button" value="Close" onclick="document.getElementById('about_modal').setAttribute('hidden', '')">
+            <p>
+I'm not a web developer by trade, It seems to all mostly work.
+
+This project is open source and hosted here: <a href="https://github.com/torvid21">https://github.com/torvid21</a>
+
+The whole webapp is a single ~2kLOC html file containing all the html/css/script, so it should be easy for anyone to audit. Only external library is TDweb, a wrapper for the telegram API found here:
+<a href="https://www.npmjs.com/package/tdweb">https://www.npmjs.com/package/tdweb</a>
+
+LIVE version is here: <a href="https://teletime.net/">https://teletime.net/</a>
+DEV version is here: <a href="http://212.100.102.124:8000/">http://212.100.102.124:8000/</a>
+
+
+TO-DO List:
+1. Add tooltips to everything
+3. Document download
+4. Add DMs in the bottom right
+5. Add a list of everyone you currently follow
+Maybe have it ask your interests? (memes, furry, cars, food/cooking, etc)
+6. Make it so posts are cleverly filtered such that channels that spam a lot show up less
+7. Add support for commenting inline, comment threading
+8. Support for likes
+9. Loading replies as sub-threads
+10. Make it load the minithumbnail at the right size immedietly
+11. Lightbox and loading high-res for images
+
+<input type="button" value="Close" onclick="document.getElementById('about_modal').setAttribute('hidden', '')">
+            </p>
+        </div>
+    </div>
 </body>
 
 <!-- Telegram library-->
@@ -1271,6 +1314,7 @@ something something preocupied with whether they could
         let images = loadedMessages[id].DOMimages;
         images.prepend(DOMvideo);
 
+        
         if (controls)
         {
             DOMvideo.setAttribute("controls", "");
