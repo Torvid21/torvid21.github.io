@@ -6,13 +6,11 @@
 
     // TODO:
     // Add tooltips to everything
-    // Add suppor tfor Posting messages to a custom channel
-    // viewing a single channel
-        // Loading channel description, etc
+
     // "share" button that works
+
     // Add meta-tags with some nice marketing images
 
-    // Lightbox forimages
     // Arbitrary file download?
     // Download button for files
 
@@ -23,10 +21,6 @@
 
     // TODO: make it so posts are cleverly filtered such that channels that spam a lot show up less
 
-    // TODO: add support for looking at a single message
-
-    // TODO: make the UI niced, show description, etc
-
     // TODO: add support for commenting inline, comment threading
 
     // TODO: support for likes
@@ -34,10 +28,9 @@
     // TODO: loading replies as sub-threads
 
     // TODO: make it load the minithumbnail at the right size immedietly
-</script>
-What?
 
-This is Telegram Timeline. It takes all the Channels (not groups or DMs) that you are a member of on Telegram, and puts them all into a singular feed, Just like twitter.
+    // TODO: Lightbox forimages
+</script>
 
 <!--
 teletime.net
@@ -266,6 +259,57 @@ something something preocupied with whether they could
         filter: sepia(100%) saturate(0%) brightness(50%);
     }
 
+    #login {
+        /* background-color:
+        red; */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        max-width: 30em;
+        transform: translate(-50%, -50%);
+    }
+    #phoneVerifyError, #codeVerifyError, #passwordVerifyError {
+        background-color: #851515;
+        padding: 0.5em;
+        margin: 0.5em;
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: 1em;
+    }
+        #phoneVerifyError:empty, #codeVerifyError:empty, #passwordVerifyError:empty {
+            display: none;
+        }
+    #loginEnterData {
+        background-color: #182533;
+        border-radius: 1em;
+        padding: 1em;
+    }
+    .entryInput {
+        border: 0px solid #ccc;
+        font-family: 'Atkinson Hyperlegible', sans-serif;
+        /* font-style: normal; */
+        font-size: 1em;
+        /* box-sizing: border-box; */
+        border-radius: 0.5em;
+        padding-left: 0.5em;
+        color: white;
+        background-color: #355779;
+        resize: none;
+        outline: none;
+        height: 1.5em;
+        width: 15em;
+        width: 15em;
+    }
+
+    .entryButton {
+        width: 3em;
+        height: 2.0em;
+        background-color: #355779;
+        color: white;
+        border-width: 0;
+        border-radius: 0.5em;
+    }
+
     .messageInput, .replyInput {
         display: flex;
         flex-direction: row;
@@ -332,15 +376,10 @@ something something preocupied with whether they could
 </head>
 
 <body>
-
-    <a href="/"><h1>Telegram Timeline</h1></a>
-
-    <div style="white-space: break-spaces;">
-        <!--This is going to be crazy.
-        Very in-development, feel free to poke @Torvid if you find bugs!-->
-        idk why I created this.
-        Twitter except secretly it's telegram
-    </div>
+    <h1>Telegram Timeline</h1>
+    <p>
+        idk what I'm doing
+    </p>
 
     <div id="status" hidden>
         <p id="state">state: </p>
@@ -348,28 +387,39 @@ something something preocupied with whether they could
         <p id="user_id">user_id: </p>
     </div>
 
+    <div id="login">
+        <h1>What?</h1>
+        <p>
+            This is Telegram Timeline.<br /><br />
+            It takes all the Channels (not Groups or DMs) that you are a member of on Telegram, and puts them all into a singular feed for you, Just like twitter.<br /><br />
+            Log-in to telegram below:<br />
+        </p>
+        
+        <div id="loginEnterData">
+            <div id="phoneVerify">
+                <label for="phone">Enter phone number:</label><br />
+                <input class="entryInput" type="tel" id="phoneNumber" name="phone">
+                <input class="entryButton" type="button" id="phoneButton" value="ok">
+                <div id="phoneVerifyError"></div>
+                <br />
+                Make sure to include the regional indicator ex: +46xxxx...
+            </div>
 
-    <div id="phoneVerify">
-        <label for="phone">Enter phone number:</label>
-        <input type="tel" id="phoneNumber" name="phone">
-        <input type="button" id="phoneButton" value="ok">
-        <div id="phoneVerifyError"></div>
-        <br />
-        You need to use the regional indicator (+46xxxx...)
-    </div>
+            <div id="codeVerify">
+                <p>Log-in code sent to your telegram account!</p>
+                <label for="phone">Enter it here:</label><br />
+                <input class="entryInput" id="codeNumber" name="phone">
+                <input class="entryButton" type="button" id="codeButton" value="ok">
+                <div id="codeVerifyError"></div>
+            </div>
 
-    <div id="codeVerify">
-        <label for="phone">Login code sent to your telegram account! Enter it here:</label><br />
-        <input type="tel" id="codeNumber" name="phone">
-        <input type="button" id="codeButton" value="ok">
-        <div id="codeVerifyError"></div>
-    </div>
-
-    <div id="passwordVerify">
-        <label for="phone">Two-factor auth is enabled, Enter your telegram password:</label><br />
-        <input type="password" id="passwordNumber" name="phone">
-        <input type="button" id="passwordButton" value="ok">
-        <div id="passwordVerifyError"></div>
+            <div id="passwordVerify">
+                <label for="phone">Two-factor auth is enabled, Enter your telegram password:</label><br />
+                <input class="entryInput" type="password" id="passwordNumber" name="phone">
+                <input class="entryButton" type="button" id="passwordButton" value="ok">
+                <div id="passwordVerifyError"></div>
+            </div>
+        </div>
     </div>
 
     <div id="mainView">
@@ -505,6 +555,9 @@ something something preocupied with whether they could
     let DOMlogStateAuth = document.getElementById("auth_state");
     let DOMlogUserID = document.getElementById("user_id");
 
+    let DOMlogin = document.getElementById("login");
+    DOMlogin.hidden = true;
+
     let DOMphoneVerify = document.getElementById("phoneVerify");
     let DOMphoneVerifyError = document.getElementById("phoneVerifyError");
     let DOMphoneButton = document.getElementById("phoneButton");
@@ -524,9 +577,10 @@ something something preocupied with whether they could
     DOMpasswordVerify.hidden = true;
 
     let DOMmainView = document.getElementById("mainView");
+    DOMmainView.hidden = true;
     let DOMtestButton = document.getElementById("testButton");
     let DOMchannelList = document.getElementById("channelList");
-
+    
     let DOMmessageInput = document.getElementById("messageInput");
     let DOMmessageSendButton = document.getElementById("messageSendButton");
     let DOMmessageTextbox = document.getElementById("messageTextbox");
@@ -541,15 +595,16 @@ something something preocupied with whether they could
 
     let DOMloader = document.getElementById("loader");
 
-    DOMmainView.hidden = true;
-
     DOMmessageSendButton.addEventListener("click", function ()
     {
         if (DOMmessageTextbox.value == "")
             return;
-        sendMessage(DOMmessageTextbox.value, timelineChannel.id);
+        let text = DOMmessageTextbox.value
         DOMmessageTextbox.value = "";
+        createTimelineChannel();
+        sendMessage(text, timelineChannel.id);
     });
+
     DOMmessageTextbox.addEventListener("keydown", function (event)
     {
         if (event.shiftKey)
@@ -562,8 +617,10 @@ something something preocupied with whether they could
 
             if (DOMmessageTextbox.value == "")
                 return;
-            sendMessage(DOMmessageTextbox.value, timelineChannel.id);
+            createTimelineChannel();
+            let text = DOMmessageTextbox.value
             DOMmessageTextbox.value = "";
+            sendMessage(text, timelineChannel.id);
         }
     });
 
@@ -616,15 +673,12 @@ something something preocupied with whether they could
         });
 
         console.log(result)
-        //window.location.reload(); // TODO: fix
-        //addMessage(result, timelineChannel, false);
     }
-
 
     let scrollChecker = setInterval(function ()
     {
         scroll = document.body.offsetHeight - (window.innerHeight + Math.ceil(window.pageYOffset));
-        if (scroll < 500)
+        if (scroll < 1000)
         {
             loadMore();
         }
@@ -632,7 +686,6 @@ something something preocupied with whether they could
 
     async function setProfilePicEventually(img, photo)
     {
-
         if (!photo)
         {
             img.src = "missing-picture.png"
@@ -646,24 +699,10 @@ something something preocupied with whether they could
         img.src = await loadImage(photo.small);
     }
 
-    async function setPictureEventually(img, small, minithumbnail)
-    {
-        if (!photo)
-        {
-            img.src = "missing-picture.png"
-            return;
-        }
-
-        // 1. immedietly set it to the mini pic
-        img.src = "data:image/jpeg;base64," + minithumbnail.data;
-
-        // 2. slowly download the full pic and set it.
-        img.src = await loadImage(small);
-    }
-
     // Creates a message and appends it to the DOM
     async function createMessage(id, chat, message, use_hiding = true, bIsComment = false)
     {
+        let date = message.date;
         // Create and append the message tag to the DOM immedietly
         let firstChildThatIsOlderThanNewMessage = undefined
         for (let child of DOMchannelList.children)
@@ -676,7 +715,6 @@ something something preocupied with whether they could
         }
         let DOMmessage = document.createElement("message");
 
-       
         if (!bIsComment)
         {
             //if (firstChildThatIsOlderThanNewMessage)
@@ -684,8 +722,6 @@ something something preocupied with whether they could
             //else
             DOMchannelList.appendChild(DOMmessage);
         }
-
-        let date = message.date;
 
         let forwardcount = 0
         let viewcount = 0
@@ -712,7 +748,7 @@ something something preocupied with whether they could
                     "user_id": message.forward_info.origin.sender_user_id,
                 });
                 username = user.username;
-                profile_pic = user.profile_photo;//await loadImage(user.profile_photo.small);
+                profile_pic = user.profile_photo;
             }
             else if (message.forward_info.origin["@type"] == "messageForwardOriginChannel")
             {
@@ -847,16 +883,11 @@ something something preocupied with whether they could
             if (bHitMessage) // go to message / comments
             {
                 history.pushState({}, "Go to thread", "?channel=" + username + "&message=" + message.id)
-                //window.location.href = "?channel=" + username + "&message=" + message.id;
-                //let urlParams = new URLSearchParams(window.location.search);
-                //channel_name_or_id = urlParams.get("channel");
-                //channel_message_id = urlParams.get("message");
                 Startup()
             }
             else if (bHitProfile) // go to profile
             {
                 history.pushState({}, "Go to channel or user", "?channel=" + username)
-                //window.location.href = "?channel="+username;
                 Startup()
             }
         });
@@ -880,7 +911,7 @@ something something preocupied with whether they could
             loadedMessages[id].DOMreply.setAttribute("class", "reply hovercircle");
             loadedMessages[id].DOMreply.addEventListener("click", function (_DOMmessage, chat, message, thread)
             {
-                channel = channels[chat.id];
+                let channel = channels[chat.id];
 
                 return async function ()
                 {
@@ -984,12 +1015,6 @@ something something preocupied with whether they could
     async function loadImage(file)
     {
         return loadFile(file, "image/png", null);
-        ////return loadFile(file, "image/png", null);
-        //if (!imageCache.hasOwnProperty(file.id))
-        //{
-        //    imageCache[file.id] = loadFile(file, "image/png", null);
-        //}
-        //return imageCache[file.id];
     }
     async function loadFile(file, mime_type, setProgress)
     {
@@ -1070,16 +1095,27 @@ something something preocupied with whether they could
         let img = document.createElement('img');
 
         images.prepend(img);
-        console.log(image);
-        //loadImage(image).then((src) =>
-        //{
-        //    img.src = src;
-        //})
-        return img;
+
+
+        if (image.sizes) // normal image
+        {
+            img.src = "data:image/jpeg;base64," + image.minithumbnail.data;
+            loadImage(image.sizes[0].photo).then((src) =>
+            {
+                img.src = src;
+            })
+        }
+        else // document
+        {
+            img.src = "data:image/jpeg;base64," + image.minithumbnail.data;
+            loadImage(image.thumbnail).then((src) =>
+            {
+                img.src = src;
+            })
+        }
     }
     async function addVideo(id, message, video, thumbnail, controls)
     {
-        let thumbnailPath = await loadImage(thumbnail);
         let DOMvideo = document.createElement('video');
         let images = loadedMessages[id].DOMimages;
         images.prepend(DOMvideo);
@@ -1093,11 +1129,27 @@ something something preocupied with whether they could
             DOMvideo.setAttribute("autoplay", "");
             DOMvideo.setAttribute("loop", "");
         }
-
-        DOMvideo.setAttribute("poster", thumbnailPath);
+        console.log(thumbnail);
+        DOMvideo.setAttribute("poster", "data:image/jpeg;base64," + thumbnail.minithumbnail.data);
+        if (thumbnail["@type"] == "video")
+        {
+            loadImage(thumbnail.thumbnail.file).then((src) =>
+            {
+                DOMvideo.setAttribute("poster", src);
+            })
+        }
+        else if (thumbnail["@type"] == "animation")
+        {
+            loadImage(thumbnail.thumbnail.file).then((src) =>
+            {
+                DOMvideo.setAttribute("poster", src);
+            })
+        }
 
         let progress = images.appendChild(document.createElement('progress'));
-        let videoUrl = await loadFile(video, "video/mp4", function (value, max)
+        let source = document.createElement('source');
+        DOMvideo.appendChild(source);
+        loadFile(video, "video/mp4", function (value, max)
         {
             if (value == max) // done
             {
@@ -1105,11 +1157,11 @@ something something preocupied with whether they could
             }
             progress.setAttribute("value", value)
             progress.setAttribute("max", max)
+        }).then((src) =>
+        {
+            source.setAttribute("src", src);
         });
 
-        let source = document.createElement('source');
-        source.setAttribute("src", videoUrl);
-        DOMvideo.appendChild(source);
     }
     async function setCaption(id, message, caption)
     {
@@ -1132,8 +1184,8 @@ something something preocupied with whether they could
             return true;
         else if (contentType == "messageDocument")
             return true;
-        else if (contentType == "messageSticker")
-            return true;
+        //else if (contentType == "messageSticker")
+        //    return true;
         return false;
     }
     function getSupportedMessageCount(result)
@@ -1182,7 +1234,7 @@ something something preocupied with whether they could
                 await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
-            await addVideo(id, message, message.content.video.video, message.content.video.thumbnail.file, true)
+            await addVideo(id, message, message.content.video.video, message.content.video, true)
         }
         else if (contentType == "messageAnimation")
         {
@@ -1190,7 +1242,7 @@ something something preocupied with whether they could
                 await createMessage(id, chat, message, use_hiding, bIsComment)
             await setReplyCount(id, message);
             await setCaption(id, message, message.content.caption.text);
-            await addVideo(id, message, message.content.animation.animation, message.content.animation.thumbnail.file, false)
+            await addVideo(id, message, message.content.animation.animation, message.content.animation, false)
         }
         else if (contentType == "messageDocument")
         {
@@ -1200,17 +1252,17 @@ something something preocupied with whether they could
             await setCaption(id, message, message.content.caption.text);
             await addImage(id, message, message.content.document);//.thumbnail.file
         }
-        else if (contentType == "messageSticker")
-        {
-            if (!(id in loadedMessages)) // new message
-                await createMessage(id, chat, message, use_hiding, bIsComment)
-            await setReplyCount(id, message);
-            await setCaption(id, message, "");
-            let img = await addImage(id, message, message.content.sticker.thumbnail.file);
-
-            // force stickers to be 256x256
-            img.setAttribute("style", "width:256px")
-        }
+        //else if (contentType == "messageSticker")
+        //{
+        //    if (!(id in loadedMessages)) // new message
+        //        await createMessage(id, chat, message, use_hiding, bIsComment)
+        //    await setReplyCount(id, message);
+        //    await setCaption(id, message, "");
+        //    let img = await addImage(id, message, message.content.sticker.thumbnail.file);
+        //
+        //    // force stickers to be 256x256
+        //    img.setAttribute("style", "width:256px")
+        //}
     }
 
     async function loadSingleMessage(chat, message_id)
@@ -1317,6 +1369,7 @@ something something preocupied with whether they could
         channel_message_id = urlParams.get("message");
 
         DOMmainView.hidden = false;
+        DOMlogin.hidden = true;
         DOMhome.hidden = true;
         DOMchannel.hidden = true;
         DOMthread.hidden = true;
@@ -1362,16 +1415,6 @@ something something preocupied with whether they could
 
             }
         }
-
-        //window.location.href = "?&channel=magpistreams";
-        //window.location.href = "?&private_channel_id=343245532";
-        //reset()
-
-        //if (current_status == status_home && !channels[data.chat.id].bIsDiscussion)
-        //{
-        //    // load one thing form every channel
-        //    loadMessageFromChannel(channels[data.chat.id].chat);
-        //}
 
         // If we want a single channel, but it was not found, search for it.
         if (current_status == status_channel || current_status == status_thread)
@@ -1481,8 +1524,6 @@ something something preocupied with whether they could
                 DOMchannelList.innerText = "Channel named " + channel_name_or_id + " could not be found."
             }
         }
-
-        createTimelineChannel();
     }
 
     async function createTimelineChannel()
@@ -1638,10 +1679,10 @@ something something preocupied with whether they could
             {
                 DOMphoneVerify.hidden = false;
 
-
                 while (true)
                 {
                     await waitListener(DOMphoneButton, "click");
+                    DOMphoneVerify.hidden = true;
 
                     let result = undefined;
                     try
@@ -1659,7 +1700,8 @@ something something preocupied with whether they could
                     }
                     catch
                     {
-                        DOMphoneVerifyError.innerText = "Invalid Phone Number. Make sure you use the country code."
+                        DOMphoneVerifyError.innerHTML = "Invalid Phone Number. <br/>Make sure you use the country code!"
+                        DOMphoneVerify.hidden = false;
                     }
                     DOMphoneNumber.value = "";
                     if (result && result["@type"] == 'ok')
