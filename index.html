@@ -544,16 +544,13 @@ something something preocupied with whether they could
             <h1>About Teletime</h1>
 <input type="button" value="Close" onclick="document.getElementById('about_modal').setAttribute('hidden', '')">
             <p>
-I'm not a web developer by trade, It seems to all mostly work.
+This webapp is hosted statically on Github Pages here: <a href="https://github.com/torvid21">https://github.com/torvid21</a>
+It's also fully open source!
 
-This project is open source and hosted here: <a href="https://github.com/torvid21">https://github.com/torvid21</a>
-
-The whole webapp is a single ~2kLOC html file containing all the html/css/script, so it should be easy for anyone to audit. Only external library is TDweb, a wrapper for the telegram API found here:
+It's all a single ~2kLOC html file containing all the html/css/script, so it should be easy for anyone to audit. Only external library is TDweb, a wrapper for the telegram API found here:
 <a href="https://www.npmjs.com/package/tdweb">https://www.npmjs.com/package/tdweb</a>
-
 LIVE version is here: <a href="https://teletime.net/">https://teletime.net/</a>
 DEV version is here: <a href="http://212.100.102.124:8000/">http://212.100.102.124:8000/</a>
-
 
 TO-DO List:
 1. Add tooltips to everything
@@ -2092,39 +2089,44 @@ Maybe have it ask your interests? (memes, furry, cars, food/cooking, etc)
                     supergroup.status["@type"] === 'chatMemberStatusAdministrator' ||
                     supergroup.status["@type"] === 'chatMemberStatusRestricted')
                 {
-                    channels[data.chat.id] = {};
-                    channels[data.chat.id].title = data.chat.title
-                    channels[data.chat.id].chat = data.chat;
-                    channels[data.chat.id].supergroup = supergroup;
-                    channels[data.chat.id].supergroupInfo = supergroupInfo;
-                    channels[data.chat.id].zeroCount = 0
-                    channels[data.chat.id].bIsDiscussion = false;
-                    channels[data.chat.id].discussionChannel = null;
-
-                    if (supergroup.has_linked_chat)
+                    // If it has a username, IE it's public
+                    // TODO: remove this limitation
+                    if (supergroup.username)
                     {
-                        let discussionChat = await sendGlobal({
-                            '@type': 'getChat',
-                            chat_id: supergroupInfo.linked_chat_id,
-                        });
-                        let discussionSupergroup = await sendGlobal({
-                            '@type': 'getSupergroup',
-                            supergroup_id: discussionChat.type.supergroup_id,
-                        });
-                        let discussionSupergroupInfo = await sendGlobal({
-                            "@type": "getSupergroupFullInfo",
-                            supergroup_id: discussionSupergroup.id,
-                        });
-                        channels[discussionChat.id] = {};
-                        channels[discussionChat.id].title = discussionChat.title
-                        channels[discussionChat.id].chat = discussionChat;
-                        channels[discussionChat.id].supergroup = discussionSupergroup;
-                        channels[discussionChat.id].supergroupInfo = discussionSupergroupInfo;
-                        channels[discussionChat.id].zeroCount = 0
-                        channels[discussionChat.id].bIsDiscussion = true;
-                        channels[discussionChat.id].discussionChannel = null;
-                        channels[discussionChat.id].discussionChannel = channels[discussionChat.id];
-                        channels[data.chat.id].discussionChannel = channels[discussionChat.id];
+                        channels[data.chat.id] = {};
+                        channels[data.chat.id].title = data.chat.title
+                        channels[data.chat.id].chat = data.chat;
+                        channels[data.chat.id].supergroup = supergroup;
+                        channels[data.chat.id].supergroupInfo = supergroupInfo;
+                        channels[data.chat.id].zeroCount = 0
+                        channels[data.chat.id].bIsDiscussion = false;
+                        channels[data.chat.id].discussionChannel = null;
+
+                        if (supergroup.has_linked_chat)
+                        {
+                            let discussionChat = await sendGlobal({
+                                '@type': 'getChat',
+                                chat_id: supergroupInfo.linked_chat_id,
+                            });
+                            let discussionSupergroup = await sendGlobal({
+                                '@type': 'getSupergroup',
+                                supergroup_id: discussionChat.type.supergroup_id,
+                            });
+                            let discussionSupergroupInfo = await sendGlobal({
+                                "@type": "getSupergroupFullInfo",
+                                supergroup_id: discussionSupergroup.id,
+                            });
+                            channels[discussionChat.id] = {};
+                            channels[discussionChat.id].title = discussionChat.title
+                            channels[discussionChat.id].chat = discussionChat;
+                            channels[discussionChat.id].supergroup = discussionSupergroup;
+                            channels[discussionChat.id].supergroupInfo = discussionSupergroupInfo;
+                            channels[discussionChat.id].zeroCount = 0
+                            channels[discussionChat.id].bIsDiscussion = true;
+                            channels[discussionChat.id].discussionChannel = null;
+                            channels[discussionChat.id].discussionChannel = channels[discussionChat.id];
+                            channels[data.chat.id].discussionChannel = channels[discussionChat.id];
+                        }
                     }
                 }
 
