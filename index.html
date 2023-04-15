@@ -439,10 +439,7 @@ something something preocupied with whether they could
 </head>
 
 <body>
-    <h1>Telegram Timeline</h1>
-    <p>
-        idk what I'm doing
-    </p>
+    <a href="#"><h1>Telegram Timeline</h1></a>
     <hr />
 
     <div id="status" hidden>
@@ -661,12 +658,14 @@ something something preocupied with whether they could
     let status_thread = "thread" // viewing a single message
     let current_status = status_waitPhoneNumber
 
-    let urlParams = new URLSearchParams(window.location.search);
-    let channel_name_or_id = urlParams.get("channel");
-    let channel_message_id = urlParams.get("message");
+    //let urlParams = new URLSearchParams(window.location.search);
+    //let channel_name_or_id = urlParams.get("channel");
+    //let channel_message_id = urlParams.get("message");
 
-    addEventListener("popstate", (event) => { Startup() });
-    onpopstate = (event) => { Startup() };
+    //addEventListener("popstate", (event) => { Startup() });
+    //onpopstate = (event) => { Startup() };
+    addEventListener("hashchange", (event) => { Startup() });
+    onhashchange = (event) => { Startup()  };
 
     // get html elements
     let DOMlogState = document.getElementById("state");
@@ -1016,12 +1015,12 @@ something something preocupied with whether they could
 
             if (bHitMessage) // go to message / comments
             {
-                history.pushState({}, "Go to thread", "?channel=" + username + "&message=" + message.id)
+                history.pushState({}, "Go to thread", "#channel=" + username + "#message=" + message.id)
                 Startup()
             }
             else if (bHitProfile) // go to profile
             {
-                history.pushState({}, "Go to channel or user", "?channel=" + username)
+                history.pushState({}, "Go to channel or user", "#channel=" + username)
                 Startup()
             }
         });
@@ -1101,7 +1100,7 @@ something something preocupied with whether they could
         DOMviews.setAttribute("class", "views hovercircle");
         DOMviews.appendChild(document.createElement("span")).textContent = viewcount;
 
-        console.log(message)
+        //console.log(message)
         let DOMshare = loadedMessages[id].DOMinteractions.appendChild(document.createElement("button"));
         DOMshare.setAttribute("class", "share hovercircle");
         DOMshare.appendChild(document.createElement("span")).textContent = ""
@@ -1521,9 +1520,27 @@ something something preocupied with whether they could
         abortController.abort(); // abort all async functions
 
         DOMloader.hidden = false;
-        let urlParams = new URLSearchParams(window.location.search);
-        channel_name_or_id = urlParams.get("channel");
-        channel_message_id = urlParams.get("message");
+
+        let channel_name_or_id = null;
+        let channel_message_id = null;
+        let splitString = window.location.hash.split("#");
+        let split0 = splitString[0];
+        let split1 = splitString[1];
+        let split2 = splitString[2];
+        console.log(splitString);
+        if (split1)
+        {
+            let channelSplit = splitString[1].split("=");
+            if (channelSplit[0] == "channel")
+                channel_name_or_id = channelSplit[1]
+        }
+        if (split2)
+        {
+            let messageSplit = splitString[2].split("=");
+            if (messageSplit[0] == "message")
+                channel_message_id = messageSplit[1]
+        }
+
 
         DOMmainView.hidden = false;
         DOMlogin.hidden = true;
@@ -1818,7 +1835,7 @@ something something preocupied with whether they could
 
         timelineChannel = chat;
 
-        sendMessage("Hello!\n\nThis channel is your Timeline.\n Think of it kind of like your twitter timeline. 'Retweets' and 'Tweets' on www.teletime.net will show up here.", timelineChannel.id);
+        sendMessage("Hello!\n\nThis channel is your Timeline.\n Think of it kind of like your twitter timeline. 'Retweets' and 'Tweets' on teletime.net will show up here.", timelineChannel.id);
 
         DOMcreatingTelegramTimelineBackground.hidden = true;
     }
