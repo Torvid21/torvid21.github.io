@@ -87,6 +87,10 @@ something something preocupied with whether they could
         display: none !important;
     }
 
+    hr {
+
+    }
+
     message {
         background-color: var(--message);
         display: block;
@@ -259,6 +263,21 @@ something something preocupied with whether they could
         filter: sepia(100%) saturate(0%) brightness(50%);
     }
 
+    #creatingTelegramTimelineBackground {
+        position: absolute;
+        top: 0;
+        background-color: #0e1621;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    #creatingTelegramTimeline {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        max-width: 30em;
+        transform: translate(-50%, -50%);
+    }
     #login {
         /* background-color:
         red; */
@@ -268,6 +287,18 @@ something something preocupied with whether they could
         max-width: 30em;
         transform: translate(-50%, -50%);
     }
+
+    #Channel {
+    }
+        #Channel h1 {
+            /* background-color:red; */
+        }
+        #Channel img {
+            border-radius: 5em;
+            width: 10em;
+            height: 10em;
+        }
+
     #phoneVerifyError, #codeVerifyError, #passwordVerifyError {
         background-color: #851515;
         padding: 0.5em;
@@ -276,9 +307,9 @@ something something preocupied with whether they could
         margin-right: 0;
         border-radius: 1em;
     }
-        #phoneVerifyError:empty, #codeVerifyError:empty, #passwordVerifyError:empty {
-            display: none;
-        }
+    #phoneVerifyError:empty, #codeVerifyError:empty, #passwordVerifyError:empty {
+        display: none;
+    }
     #loginEnterData {
         background-color: #182533;
         border-radius: 1em;
@@ -380,6 +411,7 @@ something something preocupied with whether they could
     <p>
         idk what I'm doing
     </p>
+    <hr />
 
     <div id="status" hidden>
         <p id="state">state: </p>
@@ -425,7 +457,7 @@ something something preocupied with whether they could
     <div id="mainView">
 
         <div id="Home">
-            <h1>Home</h1>
+            <h1 id="HomeTitle">Your Feed</h1>
 
             <span>What's happening?</span>
             <br />
@@ -441,21 +473,35 @@ something something preocupied with whether they could
         </div>
 
         <div id="Channel">
-            <h1>Channel</h1>
+            <!--<img src="Coal.png" />
+    <h2 id="ChannelTitle">Coals Telegram Timeline</h2>
+    <h3 id="ChannelLink"> channel link </h3>
+    <p id="ChannelDescription">channel description</p>
+    <label id="ChannelFollowing">106</label>  following
+    <label id="ChannelFollowers">1634</label>  followers
+    <hr />-->
         </div>
 
         <div id="Thread">
-            <h1>Thread</h1>
+            <h1 id="ThreadTitle">Thread</h1>
         </div>
 
         <p id="channelList">
         </p>
 
+        <center>
+            <div id="loader" class="loader"></div>
+        </center>
     </div>
 
-    <center>
-        <div id="loader" class="loader"></div>
-    </center>
+    <div id="creatingTelegramTimelineBackground" hidden>
+        <div id="creatingTelegramTimeline">
+            <h1>Creating Telegram Timeline</h1>
+            <p>This could take a couple seconds, hold tight.</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+
 </body>
 
 <!-- Telegram library-->
@@ -528,6 +574,48 @@ something something preocupied with whether they could
             element.addEventListener(listenerName, listener);
         });
     }
+    // ChatGPT made this :)
+    class AbortController
+    {
+        constructor()
+        {
+            this._signals = new Set();
+        }
+
+        createSignal()
+        {
+            const signal = {
+                aborted: false,
+            };
+            this._signals.add(signal);
+            return signal;
+        }
+
+        abort()
+        {
+            for (const signal of this._signals)
+            {
+                signal.aborted = true;
+            }
+        }
+    }
+    const abortController = new AbortController();
+
+    async function sendCancelable(argument)
+    {
+        return await sendGlobal(argument);
+        //let abortSignal = abortController.createSignal();
+        //let thing = await sendGlobal(argument);
+        //if (abortSignal.aborted)
+        //{
+        //    return;
+        //}
+        //return thing;
+    }
+    async function sendGlobal(argument)
+    {
+        return await client.send(argument);
+    }
 
     // some global variables :)
     let loadedMessages = [] // groups messages into albums
@@ -595,17 +683,19 @@ something something preocupied with whether they could
 
     let DOMloader = document.getElementById("loader");
 
-    DOMmessageSendButton.addEventListener("click", function ()
+    let DOMcreatingTelegramTimelineBackground = document.getElementById("creatingTelegramTimelineBackground");
+
+    DOMmessageSendButton.addEventListener("click", async function ()
     {
         if (DOMmessageTextbox.value == "")
             return;
         let text = DOMmessageTextbox.value
         DOMmessageTextbox.value = "";
-        createTimelineChannel();
+        await createTimelineChannel();
         sendMessage(text, timelineChannel.id);
     });
 
-    DOMmessageTextbox.addEventListener("keydown", function (event)
+    DOMmessageTextbox.addEventListener("keydown", async function (event)
     {
         if (event.shiftKey)
             return;
@@ -617,7 +707,7 @@ something something preocupied with whether they could
 
             if (DOMmessageTextbox.value == "")
                 return;
-            createTimelineChannel();
+            await createTimelineChannel();
             let text = DOMmessageTextbox.value
             DOMmessageTextbox.value = "";
             sendMessage(text, timelineChannel.id);
@@ -632,8 +722,10 @@ something something preocupied with whether they could
         if (DOMreplyTextbox.value == "")
             return;
         DOMreplyInput.hidden = true;
-        sendMessage(DOMreplyTextbox.value, global_chat_id, global_reply_id, global_message_thread_id);
+        let text = DOMreplyTextbox.value
         DOMreplyTextbox.value = "";
+        sendMessage(text, global_chat_id, global_reply_id, global_message_thread_id);
+        // TODO: open the thread
     });
     DOMreplyTextbox.addEventListener("keydown", function (event)
     {
@@ -648,15 +740,17 @@ something something preocupied with whether they could
             if (DOMreplyTextbox.value == "")
                 return;
             DOMreplyInput.hidden = true;
-            sendMessage(DOMreplyTextbox.value, global_chat_id, global_reply_id, global_message_thread_id);
+            let text = DOMreplyTextbox.value
             DOMreplyTextbox.value = "";
+            sendMessage(text, global_chat_id, global_reply_id, global_message_thread_id);
+            // TODO: open the thread
         }
     });
 
     async function sendMessage(contents, chat_id, reply_to_message_id = 0, message_thread_id = 0)
     {
         // Send a text message to the channel
-        let result = await client.send({
+        let result = await sendCancelable({
             "@type": "sendMessage",
             chat_id: chat_id,
             reply_to_message_id: reply_to_message_id,
@@ -672,7 +766,7 @@ something something preocupied with whether they could
             },
         });
 
-        console.log(result)
+        Startup();
     }
 
     let scrollChecker = setInterval(function ()
@@ -743,7 +837,7 @@ something something preocupied with whether they could
             // forwarded from a user
             if (message.forward_info.origin["@type"] == "messageForwardOriginUser")
             {
-                let user = await client.send({
+                let user = await sendCancelable({
                     "@type": "getUser",
                     "user_id": message.forward_info.origin.sender_user_id,
                 });
@@ -771,7 +865,7 @@ something something preocupied with whether they could
             {
                 if (message.sender_id["@type"] == "messageSenderUser")
                 {
-                    let user = await client.send({
+                    let user = await sendCancelable({
                         "@type": "getUser",
                         "user_id": message.sender_id.user_id,
                     });
@@ -785,7 +879,7 @@ something something preocupied with whether they could
                 {
                     profile_pic = chat.photo;
                     title = chat.title
-                    let channelSupergroup = await client.send({
+                    let channelSupergroup = await sendCancelable({
                         '@type': 'getSupergroup',
                         supergroup_id: chat.type.supergroup_id,
                     });
@@ -895,7 +989,7 @@ something something preocupied with whether they could
         let messageThread = null;
         try
         {
-            messageThread = await client.send({
+            messageThread = await sendCancelable({
                 '@type': 'getMessageThread',
                 chat_id: chat.id,
                 message_id: message.id,
@@ -940,18 +1034,22 @@ something something preocupied with whether they could
         {
             return async function ()
             {
+                await createTimelineChannel();
+
                 let fwd = loadedMessages[inner_id].messages;
                 let msgs = [];
                 for (let i = 0; i < fwd.length; i++)
                 {
                     msgs.push(fwd[i].id)
                 }
-                client.send({
+                await sendCancelable({
                     '@type': 'forwardMessages',
                     from_chat_id: inner_chatId,
                     chat_id: timelineChannel.id,
                     message_ids: msgs,
                 });
+
+                Startup();
             }
         }(id, chat.id));
         
@@ -1050,7 +1148,7 @@ something something preocupied with whether they could
 
             if (!file.is_downloading_completed)
             {
-                let result = await client.send({
+                let result = await sendCancelable({
                     '@type': 'downloadFile',
                     file_id: file.id,
                     priority: 1,
@@ -1061,7 +1159,7 @@ something something preocupied with whether they could
                 fileSize = result.size;
             }
 
-            let result2 = await client.send({
+            let result2 = await sendCancelable({
                 '@type': 'readFilePart',
                 file_id: file.id,
                 offset: offset,
@@ -1267,7 +1365,7 @@ something something preocupied with whether they could
 
     async function loadSingleMessage(chat, message_id)
     {
-        let message = await client.send({
+        let message = await sendCancelable({
             '@type': 'getMessage',
             chat_id: chat.id,
             message_id: message_id,
@@ -1284,7 +1382,7 @@ something something preocupied with whether they could
         
         let messageCount = 1;
 
-        let result = await client.send({
+        let result = await sendCancelable({
             '@type': 'getChatHistory',
             chat_id: chat.id,
             from_message_id: startID, // start from the latest message
@@ -1292,7 +1390,7 @@ something something preocupied with whether they could
             limit: messageCount, // number of messages to fetch
         });
 
-        result = await client.send({
+        result = await sendCancelable({
             '@type': 'getChatHistory',
             chat_id: chat.id,
             from_message_id: startID, // start from the latest message
@@ -1360,9 +1458,14 @@ something something preocupied with whether they could
         }
     }, 100);
 
+    let rCountGlobal = 0;
     // Called once things are done loading.
     async function Startup()
     {
+        rCountGlobal++;
+
+        abortController.abort(); // abort all async functions
+
         DOMloader.hidden = false;
         let urlParams = new URLSearchParams(window.location.search);
         channel_name_or_id = urlParams.get("channel");
@@ -1400,6 +1503,7 @@ something something preocupied with whether they could
             channel.latestMessage = null;
             channel.latestMessageTimestamp = null;
             channel.zeroCount = 0;
+            channel.exhausted = false;
         }
 
         if (current_status == status_home)
@@ -1412,7 +1516,6 @@ something something preocupied with whether they could
 
                 // load one thing form every channel
                 loadMessageFromChannel(channel.chat);
-
             }
         }
 
@@ -1423,7 +1526,7 @@ something something preocupied with whether they could
             try
             {
                 console.log(`Trying to load channel ${channel_name_or_id} as chat ID`);
-                chat = await client.send({
+                chat = await sendCancelable({
                     '@type': 'getChat',
                     chat_id: channel_name_or_id,
                 });
@@ -1433,7 +1536,7 @@ something something preocupied with whether they could
                 try
                 {
                     console.log(`Trying to load channel ${channel_name_or_id} as public chat by Name`);
-                    chat = await client.send({
+                    chat = await sendCancelable({
                         '@type': 'searchPublicChat',
                         username: channel_name_or_id,
                     });
@@ -1446,12 +1549,12 @@ something something preocupied with whether they could
 
             if (chat)
             {
-                let supergroup = await client.send({
+                let supergroup = await sendCancelable({
                     '@type': 'getSupergroup',
                     supergroup_id: chat.type.supergroup_id,
                 });
 
-                let supergroupInfo = await client.send({
+                let supergroupInfo = await sendCancelable({
                     "@type": "getSupergroupFullInfo",
                     supergroup_id: supergroup.id,
                 });
@@ -1466,7 +1569,7 @@ something something preocupied with whether they could
                 if (current_status == status_thread)
                 {
                     // load the first message
-                    let message = await client.send({
+                    let message = await sendCancelable({
                         '@type': 'getMessage',
                         chat_id: chat.id,
                         message_id: channel_message_id,
@@ -1476,7 +1579,7 @@ something something preocupied with whether they could
                     let result = null;
                     try
                     {
-                        result = await client.send({
+                        result = await sendCancelable({
                             '@type': 'getMessageThreadHistory',
                             chat_id: chat.id,
                             message_id: message.id,
@@ -1495,7 +1598,7 @@ something something preocupied with whether they could
                         // If a thread was found, to be able to reply to the main message
                         // we need to use the main message from the *thread*, not from the *channel*.
                         // we find the *thread* message by asking the first reply what it was replying to.
-                        let discussionChat = await client.send({
+                        let discussionChat = await sendCancelable({
                             '@type': 'getChat',
                             chat_id: result.messages[0].reply_in_chat_id,
                         });
@@ -1536,23 +1639,25 @@ something something preocupied with whether they could
         if (timelineChannel)
             return;
 
+        DOMcreatingTelegramTimelineBackground.hidden = false;
+
         // 1. Create the channel
-        let chat = await client.send({
+        let chat = await sendCancelable({
             "@type": "createNewSupergroupChat",
             title: user.username + "'s Telegram Timeline",
             is_channel: true,
-            description: "This channel is your Timeline. \nMessages posted or retweeted on from teletime.net will show up here. \n\nThis last number is your user ID and needs to remain at the end of the description for Teletime to work correctly.\n" + user.id,
+            description: "This is " + user.username + "'s Telegram timeline!\n\nThis number is your user ID and needs to remain here for Teletime to work correctly.\n" + user.id,
         });
-
-
+        
+        
         // 2. Enable replies by adding a "discussion group".
-        let discssionGroup = await client.send({
+        let discssionGroup = await sendCancelable({
             "@type": "createNewSupergroupChat",
             title: "Teletime - Discussion Group.",
             is_channel: false,
             description: "This is the discussion group for your telegram timeline. Feel free to ignore it.\n\n" + user.id + "DISCUSS",
         });
-        await client.send({
+        await sendCancelable({
             '@type': 'setChatDiscussionGroup',
             chat_id: chat.id,
             discussion_chat_id: discssionGroup.id,
@@ -1562,7 +1667,7 @@ something something preocupied with whether they could
         // 3. Update the profile picture
         //let uniqueRemoteImageUrl = `$http://212.100.102.124:8000/Coal.png?${Date.now()}`;
         //console.log(uniqueRemoteImageUrl);
-        //let setphotoresult = await client.send({
+        //let setphotoresult = await sendCancelable({
         //    "@type": "setChatPhoto",
         //    chat_id: chatId,
         //    photo: {
@@ -1572,7 +1677,7 @@ something something preocupied with whether they could
         //        expected_size: 0,
         //    },
         //});
-        //await client.send({
+        //await sendCancelable({
         //    '@type': 'setChatPhoto',
         //    chat_id: chat.id,
         //    photo: {
@@ -1589,7 +1694,7 @@ something something preocupied with whether they could
         // 4. Make it public.
         let public_username = user.username + "_Timeline";
         
-        let isUsernameAvailable = await client.send({
+        let isUsernameAvailable = await sendCancelable({
             "@type": "checkChatUsername",
             chat_id: chat.id,
             username: public_username,
@@ -1603,18 +1708,22 @@ something something preocupied with whether they could
         }
         
         // don't wait for this, as it takes a while.
-        client.send({
+        sendCancelable({
             "@type": "setSupergroupUsername",
             supergroup_id: chat.type.supergroup_id,
             username: public_username,
         });
 
         timelineChannel = chat;
+
+        sendMessage("Hello!\n\nThis channel is your Timeline.\n Think of it kind of like your twitter timeline. 'Retweets' and 'Tweets' on www.teletime.net will show up here.", timelineChannel.id);
+
+        DOMcreatingTelegramTimelineBackground.hidden = true;
     }
 
     async function getChats()
     {
-        let result = await client.send({
+        let result = await sendCancelable({
             '@type': 'getChats',
             chat_list: {
                 '@type': 'chatListMain',
@@ -1622,7 +1731,7 @@ something something preocupied with whether they could
             limit: 20,
         });
 
-        return await client.send({
+        return await sendCancelable({
             '@type': 'getChats',
             chat_list: {
                 '@type': 'chatListMain',
@@ -1643,7 +1752,7 @@ something something preocupied with whether they could
 
             if (state == "authorizationStateWaitTdlibParameters")
             {
-                client.send({
+                sendGlobal({
                     '@type': 'setTdlibParameters',
                     parameters: {
                         '@type': 'tdlibParameters',
@@ -1667,16 +1776,17 @@ something something preocupied with whether they could
             }
             else if (state == "authorizationStateWaitEncryptionKey")
             {
-                client.send({
+                sendGlobal({
                     '@type': 'checkDatabaseEncryptionKey',
                     encryption_key: '', // no encryption
                 });
 
-                //client.send({'@type': 'checkDatabaseEncryptionKey', parameters:{client}});
+                //sendCancelable({'@type': 'checkDatabaseEncryptionKey', parameters:{client}});
                 //await checkDatabaseEncryptionKey(client);
             }
             else if (state == "authorizationStateWaitPhoneNumber")
             {
+                DOMlogin.hidden = false;
                 DOMphoneVerify.hidden = false;
 
                 while (true)
@@ -1687,7 +1797,7 @@ something something preocupied with whether they could
                     let result = undefined;
                     try
                     {
-                        result = await client.send({
+                        result = await sendGlobal({
                             '@type': 'setAuthenticationPhoneNumber',
                             phone_number: DOMphoneNumber.value.replace(/[^+\d]+/g, ""),
                             settings: {
@@ -1725,7 +1835,7 @@ something something preocupied with whether they could
                     let result = undefined;
                     try
                     {
-                        result = await client.send({
+                        result = await sendGlobal({
                             '@type': 'checkAuthenticationCode',
                             code: DOMcodeNumber.value,
                         });
@@ -1756,7 +1866,7 @@ something something preocupied with whether they could
                     let result = undefined;
                     try
                     {
-                        result = await client.send({
+                        result = await sendGlobal({
                             '@type': 'checkAuthenticationPassword',
                             password: DOMpasswordNumber.value,
                         });
@@ -1777,10 +1887,11 @@ something something preocupied with whether they could
             }
             else if (state == "authorizationStateReady")
             {
+                DOMlogin.hidden = true;
                 getChats();
 
                 // hoist
-                user = await client.send({
+                user = await sendGlobal({
                     "@type": "getMe",
                 });
                 DOMlogUserID.textContent = "user_id: " + user.id;
@@ -1801,12 +1912,12 @@ something something preocupied with whether they could
                 //if (data.chat.title.includes("Poss"))
                 //    return;
 
-                let supergroup = await client.send({
+                let supergroup = await sendGlobal({
                     '@type': 'getSupergroup',
                     supergroup_id: data.chat.type.supergroup_id,
                 });
 
-                let supergroupInfo = await client.send({
+                let supergroupInfo = await sendGlobal({
                     "@type": "getSupergroupFullInfo",
                     supergroup_id: supergroup.id,
                 });
@@ -1829,15 +1940,15 @@ something something preocupied with whether they could
 
                     if (supergroup.has_linked_chat)
                     {
-                        let discussionChat = await client.send({
+                        let discussionChat = await sendGlobal({
                             '@type': 'getChat',
                             chat_id: supergroupInfo.linked_chat_id,
                         });
-                        let discussionSupergroup = await client.send({
+                        let discussionSupergroup = await sendGlobal({
                             '@type': 'getSupergroup',
                             supergroup_id: discussionChat.type.supergroup_id,
                         });
-                        let discussionSupergroupInfo = await client.send({
+                        let discussionSupergroupInfo = await sendGlobal({
                             "@type": "getSupergroupFullInfo",
                             supergroup_id: discussionSupergroup.id,
                         });
